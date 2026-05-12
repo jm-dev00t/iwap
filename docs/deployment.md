@@ -83,6 +83,7 @@ docker compose up frontend
 ## 운영 고려사항
 
 - Mock Provider는 포트폴리오 데모 안정성을 위해 기본값으로 둡니다.
+- Windows Docker Desktop 환경에서 이미지 아키텍처 차이를 줄이기 위해 compose 서비스는 `linux/amd64` platform을 명시합니다.
 - 실제 외부 발송 Tool은 Human-in-the-Loop 승인 정책 뒤에서 실행해야 합니다.
 - 모든 Tool Call, 승인 결정, Agent 이벤트는 Audit Log에 남기는 방향으로 확장합니다.
 - AI provider 비용 관리를 위해 provider별 토큰 사용량 집계를 추후 확장 포인트로 둡니다.

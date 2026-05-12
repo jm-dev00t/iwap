@@ -36,7 +36,7 @@ cd D:\work\iwap\backend
 mvn test
 ```
 
-현재 로컬 PC에서는 Java, Maven이 PATH에 없어 backend 로컬 컴파일은 GitHub Actions에서 검증했습니다.
+현재 로컬 PC에서는 Java, Maven이 PATH에 없어 backend 로컬 컴파일은 Docker Maven 이미지와 GitHub Actions에서 검증했습니다.
 
 ## 전체 Docker 실행
 
@@ -92,5 +92,8 @@ NEXT_PUBLIC_IWAP_WS_URL=ws://localhost:8081/ws/workflows
 ## 현재 상태
 
 - Frontend typecheck/build/audit는 로컬에서 통과했습니다.
-- Backend Maven Test와 Docker Build는 GitHub Actions에서 통과했습니다.
-- Docker Desktop은 관리자 권한 승인 설치가 필요해 로컬 compose 실행 검증은 설치 후 진행해야 합니다.
+- Backend Maven Test는 Docker Maven 이미지와 GitHub Actions에서 통과했습니다.
+- Docker Build는 GitHub Actions에서 통과했습니다.
+- Docker Desktop 설치 후 로컬 `docker compose up --build -d` 검증이 통과했습니다.
+- 로컬 compose 기준 Postgres, Backend, Frontend health check가 모두 `healthy` 상태입니다.
+- `POST /api/workflows/runs` smoke test에서 workflow `COMPLETED` 응답을 확인했습니다.

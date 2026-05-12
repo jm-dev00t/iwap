@@ -148,7 +148,9 @@ curl http://localhost:8080/api/tools
 - GitHub Actions에서 Backend Maven Test 통과
 - GitHub Actions에서 Frontend Build 통과
 - GitHub Actions에서 Docker Build 통과
-- 로컬 PC의 Docker Desktop 설치는 관리자 권한 승인이 필요해 수동 설치 후 `docker compose up --build` 검증이 남아 있습니다.
+- 로컬 Docker Desktop에서 `docker compose up --build -d` 통과
+- 로컬 Docker Compose 기준 Postgres, Backend, Frontend health check 통과
+- 로컬 Docker 환경에서 workflow 실행 API가 `COMPLETED` 응답을 반환하는 것까지 확인
 
 ## 포트폴리오 포인트
 
