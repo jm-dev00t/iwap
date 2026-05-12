@@ -71,6 +71,21 @@ export type ToolAdapter = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_IWAP_API_BASE_URL ?? "http://localhost:8080";
 
+function normalizeWorkflowRun(run: Partial<WorkflowRun>): WorkflowRun {
+  return {
+    id: run.id ?? `run-${Date.now()}`,
+    title: run.title ?? "Untitled Workflow",
+    command: run.command ?? "",
+    requestedBy: run.requestedBy ?? "unknown",
+    status: run.status ?? "QUEUED",
+    events: run.events ?? [],
+    toolCalls: run.toolCalls ?? [],
+    approvals: run.approvals ?? [],
+    artifacts: run.artifacts ?? [],
+    auditTrail: run.auditTrail ?? [],
+  };
+}
+
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 1500): Promise<Response> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -94,7 +109,7 @@ export async function startWorkflow(command: string): Promise<WorkflowRun> {
     throw new Error(`Workflow API failed with ${response.status}`);
   }
 
-  return response.json();
+  return normalizeWorkflowRun(await response.json());
 }
 
 export async function listWorkflowRuns(): Promise<WorkflowRun[]> {
@@ -102,7 +117,8 @@ export async function listWorkflowRuns(): Promise<WorkflowRun[]> {
   if (!response.ok) {
     throw new Error(`Workflow history API failed with ${response.status}`);
   }
-  return response.json();
+  const runs = await response.json();
+  return Array.isArray(runs) ? runs.map(normalizeWorkflowRun) : [];
 }
 
 export async function listApprovals(): Promise<ApprovalItem[]> {
@@ -110,7 +126,8 @@ export async function listApprovals(): Promise<ApprovalItem[]> {
   if (!response.ok) {
     throw new Error(`Approval API failed with ${response.status}`);
   }
-  return response.json();
+  const approvals = await response.json();
+  return Array.isArray(approvals) ? approvals : [];
 }
 
 export async function approveApproval(approvalId: string): Promise<WorkflowRun> {
@@ -124,7 +141,7 @@ export async function approveApproval(approvalId: string): Promise<WorkflowRun> 
   if (!response.ok) {
     throw new Error(`Approval API failed with ${response.status}`);
   }
-  return response.json();
+  return normalizeWorkflowRun(await response.json());
 }
 
 export async function rejectApproval(approvalId: string): Promise<WorkflowRun> {

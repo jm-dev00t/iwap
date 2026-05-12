@@ -7,6 +7,7 @@
 | `POST` | `/api/workflows/runs` | Start a workflow from a natural-language command. |
 | `GET` | `/api/workflows/runs/{runId}` | Read run summary, status, steps, and generated artifacts. |
 | `GET` | `/api/workflows/runs` | List workflow history. |
+| `GET` | `/api/approvals` | List pending human-in-the-loop approval requests. |
 | `POST` | `/api/approvals/{approvalId}/approve` | Approve a human-in-the-loop request. |
 | `POST` | `/api/approvals/{approvalId}/reject` | Reject a human-in-the-loop request. |
 | `GET` | `/api/audit-logs` | Search workflow and tool-call audit logs. |
