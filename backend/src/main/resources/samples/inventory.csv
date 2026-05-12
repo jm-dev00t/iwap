@@ -1,0 +1,5 @@
+sku,product_name,current_stock,reorder_point,supplier,estimated_lead_days
+SKU-AX100,Smart Label Printer,8,20,Daehan Supply,5
+SKU-CT240,Thermal Label Roll,17,50,Seoul Pack,3
+SKU-RF900,RFID Starter Kit,4,10,Incheon Tech,8
+SKU-BX010,Shipping Box Small,180,120,Daehan Supply,2

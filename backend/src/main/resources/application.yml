@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: iwap-backend
+  datasource:
+    url: ${IWAP_DATASOURCE_URL:jdbc:postgresql://localhost:5432/iwap}
+    username: ${IWAP_DATASOURCE_USERNAME:iwap}
+    password: ${IWAP_DATASOURCE_PASSWORD:iwap}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  ai:
+    openai:
+      # Spring AI autoconfiguration may create provider beans even when IWAP runs in mock mode.
+      # A harmless default prevents local demo boot failures; real deployments override it.
+      api-key: ${OPENAI_API_KEY:demo-key-not-used-in-mock-mode}
+
+server:
+  port: ${IWAP_BACKEND_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+iwap:
+  ai:
+    # Mock mode keeps portfolio demos deterministic and cost-free when no provider key is present.
+    provider: ${IWAP_AI_PROVIDER:mock}
+  integrations:
+    # Demo mode routes external tools to mock adapters unless credentials are explicitly provided.
+    mode: ${IWAP_INTEGRATION_MODE:mock}
+  security:
+    demo-jwt-secret: ${IWAP_DEMO_JWT_SECRET:change-me-for-real-deployments}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

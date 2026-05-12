@@ -1,0 +1,4 @@
+customer_id,company_name,owner_email,segment,status
+C-1001,Hanbit Commerce,mina.kim@demo-company.com,Commerce,Active
+C-1002,Seoul Robotics Lab,joon.park@demo-company.com,Startup,Onboarding
+C-1003,Green Table Foods,sora.lee@demo-company.com,F&B,Active
