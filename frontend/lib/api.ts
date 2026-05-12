@@ -75,7 +75,16 @@ export type ToolAdapter = {
   status: string;
 };
 
+export type DemoAuthSession = {
+  tokenType: "Bearer";
+  accessToken: string;
+  email: string;
+  displayName: string;
+  roles: string[];
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_IWAP_API_BASE_URL ?? "http://localhost:8080";
+const AUTH_STORAGE_KEY = "iwap.demoAuthSession";
 
 function normalizeWorkflowRun(run: Partial<WorkflowRun>): WorkflowRun {
   return {
@@ -98,8 +107,72 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   return fetch(input, { ...init, signal: controller.signal }).finally(() => window.clearTimeout(timeout));
 }
 
+function readAuthSession(): DemoAuthSession | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as DemoAuthSession;
+  } catch {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    return null;
+  }
+}
+
+function saveAuthSession(session: DemoAuthSession) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  }
+}
+
+function authHeaders(headers?: HeadersInit): Headers {
+  const merged = new Headers(headers);
+  const session = readAuthSession();
+  if (session && !merged.has("Authorization")) {
+    merged.set("Authorization", `${session.tokenType} ${session.accessToken}`);
+  }
+  return merged;
+}
+
+async function fetchApi(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 1500): Promise<Response> {
+  let response = await fetchWithTimeout(input, { ...init, headers: authHeaders(init.headers) }, timeoutMs);
+  if (response.status !== 401) {
+    return response;
+  }
+
+  await demoLogin("MANAGER");
+  response = await fetchWithTimeout(input, { ...init, headers: authHeaders(init.headers) }, timeoutMs);
+  return response;
+}
+
+export async function demoLogin(role = "MANAGER"): Promise<DemoAuthSession> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/api/auth/demo-login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ role }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Demo login failed with ${response.status}`);
+  }
+
+  const session = (await response.json()) as DemoAuthSession;
+  saveAuthSession(session);
+  return session;
+}
+
+export function currentDemoSession(): DemoAuthSession | null {
+  return readAuthSession();
+}
+
 export async function startWorkflow(command: string): Promise<WorkflowRun> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/workflows/runs`, {
+  const response = await fetchApi(`${API_BASE_URL}/api/workflows/runs`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -119,7 +192,7 @@ export async function startWorkflow(command: string): Promise<WorkflowRun> {
 }
 
 export async function listWorkflowRuns(): Promise<WorkflowRun[]> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/workflows/runs`);
+  const response = await fetchApi(`${API_BASE_URL}/api/workflows/runs`);
   if (!response.ok) {
     throw new Error(`Workflow history API failed with ${response.status}`);
   }
@@ -128,7 +201,7 @@ export async function listWorkflowRuns(): Promise<WorkflowRun[]> {
 }
 
 export async function listApprovals(): Promise<ApprovalItem[]> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/approvals`);
+  const response = await fetchApi(`${API_BASE_URL}/api/approvals`);
   if (!response.ok) {
     throw new Error(`Approval API failed with ${response.status}`);
   }
@@ -137,7 +210,7 @@ export async function listApprovals(): Promise<ApprovalItem[]> {
 }
 
 export async function approveApproval(approvalId: string): Promise<WorkflowRun> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/approvals/${approvalId}/approve`, {
+  const response = await fetchApi(`${API_BASE_URL}/api/approvals/${approvalId}/approve`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -151,7 +224,7 @@ export async function approveApproval(approvalId: string): Promise<WorkflowRun> 
 }
 
 export async function rejectApproval(approvalId: string): Promise<WorkflowRun> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/approvals/${approvalId}/reject`, {
+  const response = await fetchApi(`${API_BASE_URL}/api/approvals/${approvalId}/reject`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -165,7 +238,7 @@ export async function rejectApproval(approvalId: string): Promise<WorkflowRun> {
 }
 
 export async function listDemoScenarios(): Promise<DemoScenario[]> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/demo-scenarios`);
+  const response = await fetchApi(`${API_BASE_URL}/api/demo-scenarios`);
   if (!response.ok) {
     throw new Error(`Demo scenario API failed with ${response.status}`);
   }
@@ -173,7 +246,7 @@ export async function listDemoScenarios(): Promise<DemoScenario[]> {
 }
 
 export async function listTools(): Promise<ToolAdapter[]> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/api/tools`);
+  const response = await fetchApi(`${API_BASE_URL}/api/tools`);
   if (!response.ok) {
     throw new Error(`Tool API failed with ${response.status}`);
   }

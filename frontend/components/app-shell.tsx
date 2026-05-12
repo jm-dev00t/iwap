@@ -1,4 +1,8 @@
-import { BarChart3, CheckSquare, History, LayoutDashboard, MessageSquareText, Settings } from "lucide-react";
+"use client";
+
+import { BarChart3, CheckSquare, History, LayoutDashboard, MessageSquareText, Settings, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { currentDemoSession, demoLogin, type DemoAuthSession } from "@/lib/api";
 
 const navItems = [
   { label: "Command", href: "/", icon: MessageSquareText },
@@ -10,6 +14,19 @@ const navItems = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<DemoAuthSession | null>(null);
+
+  useEffect(() => {
+    const existing = currentDemoSession();
+    if (existing) {
+      setSession(existing);
+      return;
+    }
+    demoLogin("MANAGER")
+      .then(setSession)
+      .catch(() => setSession(null));
+  }, []);
+
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-hairline bg-surface-soft px-5 py-6 lg:block">
@@ -35,6 +52,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+        <div className="absolute bottom-6 left-5 right-5 rounded-lg border border-hairline bg-surface-card p-3">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            {session?.displayName ?? "Demo Login"}
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            {session ? `${session.email} · ${session.roles.join(", ")}` : "Preparing manager token"}
+          </p>
+        </div>
       </aside>
       <main className="lg:pl-64">{children}</main>
     </div>

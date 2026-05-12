@@ -17,14 +17,14 @@ IWAP는 중소기업과 스타트업에서 반복적으로 발생하는 업무�
 
 ## 데모 화면
 
-스크린샷은 `docs/assets/screenshots`에 저장됩니다.
+스크린샷은 `docs/assets/screenshots`에 저장되어 있습니다.
 
 ![Command Center](docs/assets/screenshots/command-center.png)
 ![Workflow Dashboard](docs/assets/screenshots/workflows.png)
 ![Approval Inbox](docs/assets/screenshots/approvals.png)
 ![Reports](docs/assets/screenshots/reports.png)
 
-## 핵심 흐름
+## 실행 흐름
 
 ```mermaid
 flowchart LR
@@ -45,10 +45,11 @@ flowchart LR
 - Multi-Agent workflow orchestration
 - Tool Calling adapter 구조
 - Human-in-the-Loop 승인함
+- Demo JWT Login과 Role 기반 API 보호
 - Audit Log와 Report Artifact
 - PostgreSQL/JPA 기반 workflow persistence
 - WebSocket/STOMP 기반 실시간 workflow event 발행
-- 백엔드 미실행 시에도 포트폴리오 화면을 볼 수 있는 demo fallback
+- 백엔드 미실행 시 포트폴리오 화면을 볼 수 있는 demo fallback
 - Docker Compose 기반 로컬 실행 구성
 - GitHub Actions CI: backend test, frontend build, Docker build
 
@@ -115,30 +116,39 @@ npm run dev
 
 ## API 예시
 
+보호된 API는 Demo Login으로 받은 Bearer token이 필요합니다.
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/demo-login \
+  -H "Content-Type: application/json" \
+  -d "{\"role\":\"MANAGER\"}" | jq -r .accessToken)
+```
+
 ### Workflow 실행
 
 ```bash
 curl -X POST http://localhost:8080/api/workflows/runs \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"command\":\"이번 달 매출 보고서를 만들어서 슬랙 채널과 이메일로 보내줘\",\"scenarioKey\":\"monthly-sales-report\",\"requestedBy\":\"manager@demo-company.com\"}"
+  -d "{\"command\":\"이번 달 매출 보고서를 만들어서 Slack 채널과 이메일로 보내줘\",\"scenarioKey\":\"monthly-sales-report\",\"requestedBy\":\"manager@demo-company.com\"}"
 ```
 
 ### 승인 목록 조회
 
 ```bash
-curl http://localhost:8080/api/approvals
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/approvals
 ```
 
 ### 감사 로그 조회
 
 ```bash
-curl http://localhost:8080/api/audit-logs
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/audit-logs
 ```
 
 ### Tool Adapter 조회
 
 ```bash
-curl http://localhost:8080/api/tools
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/tools
 ```
 
 ## 현재 검증 상태
@@ -146,13 +156,13 @@ curl http://localhost:8080/api/tools
 - Frontend `npm run typecheck` 통과
 - Frontend `npm run build` 통과
 - Frontend `npm audit --audit-level=high` 통과
+- Backend Maven Test 통과
 - GitHub Actions에서 Backend Maven Test 통과
 - GitHub Actions에서 Frontend Build 통과
 - GitHub Actions에서 Docker Build 통과
 - 로컬 Docker Desktop에서 `docker compose up --build -d` 통과
 - 로컬 Docker Compose 기준 Postgres, Backend, Frontend health check 통과
-- 로컬 Docker 환경에서 workflow 실행 API가 `COMPLETED` 응답을 반환하는 것까지 확인
-- Backend 재시작 후 workflow history와 approval decision 상태가 PostgreSQL에서 복원되는 것 확인
+- 로컬 Docker 환경에서 workflow 실행, 승인 권한, PostgreSQL persistence 확인
 
 ## 포트폴리오 포인트
 

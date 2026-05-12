@@ -31,30 +31,37 @@ npm audit --audit-level=high
 
 ## Backend 검증
 
+로컬 Java/Maven이 PATH에 있다면:
+
 ```powershell
 cd D:\work\iwap\backend
 mvn test
 ```
 
-현재 로컬 PC에서는 Java, Maven이 PATH에 없어 backend 로컬 컴파일은 Docker Maven 이미지와 GitHub Actions에서 검증했습니다.
+로컬 Java/Maven 없이 Docker Maven 이미지로 검증하려면:
+
+```powershell
+docker run --rm --platform linux/amd64 `
+  -v D:/work/iwap/backend:/workspace `
+  -w /workspace `
+  maven:3.9.9-eclipse-temurin-21 mvn test
+```
 
 ## 전체 Docker 실행
-
-Docker Desktop 설치 후:
 
 ```powershell
 cd D:\work\iwap
 copy .env.example .env
 docker compose config
-docker compose up --build
-```
-
-다른 터미널에서:
-
-```powershell
+docker compose up --build -d
 docker compose ps
-curl http://localhost:8080/api/health
 ```
+
+정상 상태:
+
+- `iwap-postgres`: `healthy`
+- `iwap-backend`: `healthy`
+- `iwap-frontend`: `healthy`
 
 브라우저 확인:
 
@@ -62,6 +69,22 @@ curl http://localhost:8080/api/health
 http://localhost:3000
 http://localhost:8080/swagger-ui.html
 ```
+
+## Auth Smoke Test
+
+```powershell
+$manager = Invoke-RestMethod `
+  -Uri http://localhost:8080/api/auth/demo-login `
+  -Method Post `
+  -Body '{"role":"MANAGER"}' `
+  -ContentType 'application/json'
+
+$headers = @{ Authorization = "Bearer $($manager.accessToken)" }
+
+Invoke-RestMethod -Uri http://localhost:8080/api/tools -Headers $headers
+```
+
+비로그인 상태의 `/api/tools`는 `401`, `VIEWER`의 승인 API 호출은 `403`, `MANAGER`의 승인 API 호출은 성공해야 합니다.
 
 ## 문제 해결
 
@@ -96,5 +119,5 @@ NEXT_PUBLIC_IWAP_WS_URL=ws://localhost:8081/ws/workflows
 - Docker Build는 GitHub Actions에서 통과했습니다.
 - Docker Desktop 설치 후 로컬 `docker compose up --build -d` 검증이 통과했습니다.
 - 로컬 compose 기준 Postgres, Backend, Frontend health check가 모두 `healthy` 상태입니다.
-- `POST /api/workflows/runs` smoke test에서 workflow `COMPLETED` 응답을 확인했습니다.
-- Backend 컨테이너 재시작 후에도 workflow history와 approval decision 상태가 유지되는 것을 확인했습니다.
+- `POST /api/workflows/runs` smoke test와 승인 권한 smoke test가 통과했습니다.
+- Backend 컨테이너 재시작 전후에 workflow history와 approval decision 상태가 유지되는 것을 확인했습니다.

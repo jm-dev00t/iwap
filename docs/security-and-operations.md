@@ -4,9 +4,18 @@
 
 The initial portfolio build uses demo JWT-style roles:
 
-- `ADMIN`: Manages settings, providers, and audit searches.
-- `MANAGER`: Starts workflows and approves high-impact actions.
-- `OPERATOR`: Starts safe workflows and views assigned results.
+- `MANAGER`: Starts workflows, approves or rejects high-impact actions, seeds demo data, and views operational records.
+- `OPERATOR`: Starts workflows and views operational records.
+- `VIEWER`: Views operational records only.
+
+Demo tokens are issued by `POST /api/auth/demo-login` and must be sent as `Authorization: Bearer <token>` for protected API calls. This is intentionally lightweight for portfolio demonstration; a production deployment should replace it with an identity provider, short-lived access tokens, refresh-token rotation, and organization-scoped authorization rules.
+
+Current API policy:
+
+- Public: `/api/auth/demo-login`, `/api/health`, Swagger/OpenAPI, actuator endpoints.
+- `MANAGER`: approval approve/reject endpoints and demo scenario seeding.
+- `MANAGER` or `OPERATOR`: workflow creation.
+- Any authenticated demo role: read-oriented `/api/**` endpoints.
 
 ## Human Approval
 
