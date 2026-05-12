@@ -26,7 +26,7 @@ flowchart LR
 
 - `domain`: Pure workflow, agent, tool, approval, audit, and memory concepts.
 - `application`: Use cases and orchestration policies. This layer owns the business workflow.
-- `infrastructure`: AI providers, persistence, connectors, WebSocket, file/report generation, and security adapters.
+- `infrastructure`: AI providers, JPA persistence, connectors, WebSocket, file/report generation, and security adapters.
 - `interfaces`: REST controllers, WebSocket endpoints, and transport DTOs.
 
 ## Integration Boundary

@@ -97,3 +97,4 @@ NEXT_PUBLIC_IWAP_WS_URL=ws://localhost:8081/ws/workflows
 - Docker Desktop 설치 후 로컬 `docker compose up --build -d` 검증이 통과했습니다.
 - 로컬 compose 기준 Postgres, Backend, Frontend health check가 모두 `healthy` 상태입니다.
 - `POST /api/workflows/runs` smoke test에서 workflow `COMPLETED` 응답을 확인했습니다.
+- Backend 컨테이너 재시작 후에도 workflow history와 approval decision 상태가 유지되는 것을 확인했습니다.

@@ -122,7 +122,7 @@ class WorkflowOrchestratorTest {
                 new ValidatorAgent(recorder),
                 new ReporterAgent(recorder),
                 new NotifierAgent(recorder),
-                new WorkflowRunStore()
+                new InMemoryWorkflowRunStore()
         );
     }
 }

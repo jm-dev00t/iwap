@@ -46,6 +46,7 @@ flowchart LR
 - Tool Calling adapter 구조
 - Human-in-the-Loop 승인함
 - Audit Log와 Report Artifact
+- PostgreSQL/JPA 기반 workflow persistence
 - WebSocket/STOMP 기반 실시간 workflow event 발행
 - 백엔드 미실행 시에도 포트폴리오 화면을 볼 수 있는 demo fallback
 - Docker Compose 기반 로컬 실행 구성
@@ -151,12 +152,13 @@ curl http://localhost:8080/api/tools
 - 로컬 Docker Desktop에서 `docker compose up --build -d` 통과
 - 로컬 Docker Compose 기준 Postgres, Backend, Frontend health check 통과
 - 로컬 Docker 환경에서 workflow 실행 API가 `COMPLETED` 응답을 반환하는 것까지 확인
+- Backend 재시작 후 workflow history와 approval decision 상태가 PostgreSQL에서 복원되는 것 확인
 
 ## 포트폴리오 포인트
 
 - "AI 채팅"이 아니라 실제 업무 실행 흐름을 설계한 프로젝트
 - 기존 ERP, CRM, 그룹웨어, CSV/Excel, Webhook 연동으로 확장 가능한 Adapter 구조
-- 승인, 감사 로그, 리포트 산출물 등 기업 운영 관점 반영
+- 승인, 감사 로그, 리포트 산출물, DB persistence 등 기업 운영 관점 반영
 - Spring Boot + Next.js + Docker 기반의 풀스택 구현
 - Mock Provider와 Real Provider 전환을 고려한 데모 친화 구조
 

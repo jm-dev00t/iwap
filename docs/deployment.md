@@ -87,4 +87,4 @@ docker compose up frontend
 - 실제 외부 발송 Tool은 Human-in-the-Loop 승인 정책 뒤에서 실행해야 합니다.
 - 모든 Tool Call, 승인 결정, Agent 이벤트는 Audit Log에 남기는 방향으로 확장합니다.
 - AI provider 비용 관리를 위해 provider별 토큰 사용량 집계를 추후 확장 포인트로 둡니다.
-- PostgreSQL persistence는 현재 schema와 migration 기반이 준비되어 있고, application store를 JPA 기반으로 교체하는 작업이 다음 단계입니다.
+- PostgreSQL persistence는 Flyway schema와 JPA store로 연결되어 있으며 workflow history, approvals, artifacts, audit logs를 재시작 후에도 복원합니다.

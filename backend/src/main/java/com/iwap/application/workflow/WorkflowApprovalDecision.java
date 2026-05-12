@@ -1,0 +1,59 @@
+package com.iwap.application.workflow;
+
+import com.iwap.domain.approval.ApprovalRequest;
+import com.iwap.domain.approval.ApprovalStatus;
+import com.iwap.domain.audit.AuditLogEntry;
+import com.iwap.domain.workflow.WorkflowRun;
+import com.iwap.domain.workflow.WorkflowStatus;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public final class WorkflowApprovalDecision {
+
+    private WorkflowApprovalDecision() {
+    }
+
+    public static WorkflowRun apply(WorkflowRun run, String approvalId, boolean approved, String decidedBy) {
+        ApprovalStatus nextApprovalStatus = approved ? ApprovalStatus.APPROVED : ApprovalStatus.REJECTED;
+        WorkflowStatus nextWorkflowStatus = approved ? WorkflowStatus.COMPLETED : WorkflowStatus.REJECTED;
+
+        List<ApprovalRequest> approvals = run.approvals().stream()
+                .map(approval -> {
+                    if (!approval.id().equals(approvalId)) {
+                        return approval;
+                    }
+                    return new ApprovalRequest(
+                            approval.id(),
+                            approval.runId(),
+                            approval.requestedByAgent(),
+                            approval.reason(),
+                            nextApprovalStatus,
+                            approval.requestedAt()
+                    );
+                })
+                .toList();
+
+        List<AuditLogEntry> auditTrail = new ArrayList<>(run.auditTrail());
+        auditTrail.add(AuditLogEntry.of(
+                run.id(),
+                auditTrail.size() + 1L,
+                decidedBy,
+                approved ? "APPROVAL_APPROVED" : "APPROVAL_REJECTED",
+                "Human approval decision recorded for " + approvalId + "."
+        ));
+
+        return new WorkflowRun(
+                run.id(),
+                run.title(),
+                run.command(),
+                run.requestedBy(),
+                nextWorkflowStatus,
+                run.events(),
+                run.toolCalls(),
+                approvals,
+                run.artifacts(),
+                List.copyOf(auditTrail)
+        );
+    }
+}

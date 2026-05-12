@@ -23,6 +23,7 @@ IWAP는 자연어 업무 요청을 Multi-Agent Workflow로 변환해 보고서 �
 - Adapter Pattern 기반 Tool Calling 구조
 - Spring AI BOM 기반 provider 확장 준비
 - PostgreSQL + PGVector + Flyway schema
+- JPA 기반 workflow persistence 및 재시작 후 history/approval 상태 복원
 - WebSocket/STOMP 기반 실시간 workflow event
 - Next.js App Router 기반 Command Center와 Dashboard UI
 - Docker Compose 및 GitHub Actions CI 구성
