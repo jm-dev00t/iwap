@@ -1,9 +1,9 @@
-FROM node:22-alpine AS deps
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_IWAP_API_BASE_URL=http://localhost:8080
 ARG NEXT_PUBLIC_IWAP_WS_URL=ws://localhost:8080/ws/workflows
@@ -13,11 +13,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ARG NEXT_PUBLIC_IWAP_API_BASE_URL=http://localhost:8080
 ARG NEXT_PUBLIC_IWAP_WS_URL=ws://localhost:8080/ws/workflows
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 ENV NEXT_PUBLIC_IWAP_API_BASE_URL=$NEXT_PUBLIC_IWAP_API_BASE_URL
 ENV NEXT_PUBLIC_IWAP_WS_URL=$NEXT_PUBLIC_IWAP_WS_URL
 COPY --from=build /app/.next/standalone ./

@@ -1,6 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    platform: linux/amd64
     container_name: iwap-postgres
     restart: unless-stopped
     environment:
@@ -21,6 +22,7 @@ services:
   backend:
     build:
       context: ./backend
+    platform: linux/amd64
     container_name: iwap-backend
     restart: unless-stopped
     depends_on:
@@ -33,7 +35,7 @@ services:
       IWAP_AI_PROVIDER: ${IWAP_AI_PROVIDER:-mock}
       IWAP_INTEGRATION_MODE: ${IWAP_INTEGRATION_MODE:-mock}
       IWAP_DEMO_JWT_SECRET: ${IWAP_DEMO_JWT_SECRET:-change-me-for-real-deployments}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-demo-key-not-used-in-mock-mode}
       SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
       SLACK_DEFAULT_CHANNEL: "${SLACK_DEFAULT_CHANNEL:-#sales-report}"
       SMTP_HOST: ${SMTP_HOST:-}
@@ -55,6 +57,7 @@ services:
       args:
         NEXT_PUBLIC_IWAP_API_BASE_URL: ${NEXT_PUBLIC_IWAP_API_BASE_URL:-http://localhost:8080}
         NEXT_PUBLIC_IWAP_WS_URL: ${NEXT_PUBLIC_IWAP_WS_URL:-ws://localhost:8080/ws/workflows}
+    platform: linux/amd64
     container_name: iwap-frontend
     restart: unless-stopped
     depends_on:
@@ -66,7 +69,7 @@ services:
     ports:
       - "${IWAP_FRONTEND_PORT:-3000}:3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 12
