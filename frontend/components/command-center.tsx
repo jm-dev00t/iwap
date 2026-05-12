@@ -1,26 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Play } from "lucide-react";
-import { demoWorkflowRun, startWorkflow, type WorkflowRun } from "@/lib/api";
+import { demoWorkflowRun, startWorkflow, type WorkflowEventPayload, type WorkflowRun } from "@/lib/api";
+import { subscribeWorkflowEvents } from "@/lib/workflow-events";
 import { demoScenarios } from "@/lib/workflow-demo";
+
+function appendWorkflowEvent(run: WorkflowRun, event: WorkflowEventPayload): WorkflowRun {
+  const alreadyRecorded = run.events.some(
+    (item) =>
+      item.agentType === event.agentType &&
+      item.eventType === event.eventType &&
+      item.message === event.message &&
+      item.occurredAt === event.occurredAt,
+  );
+
+  if (alreadyRecorded) {
+    return run;
+  }
+
+  return {
+    ...run,
+    events: [...run.events, event],
+    auditTrail: [
+      ...run.auditTrail,
+      {
+        actor: event.agentType,
+        action: event.eventType,
+        summary: event.message,
+      },
+    ],
+  };
+}
 
 export function CommandCenter() {
   const [command, setCommand] = useState("이번 달 매출 보고서 만들어서 슬랙 채널과 이메일로 보내줘");
   const [run, setRun] = useState<WorkflowRun | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [source, setSource] = useState<"api" | "fallback" | null>(null);
+  const [liveEvents, setLiveEvents] = useState(0);
+  const eventBuffer = useRef(new Map<string, WorkflowEventPayload[]>());
+
+  useEffect(() => {
+    return subscribeWorkflowEvents((event) => {
+      setRun((current) => {
+        if (!current || current.id !== event.runId) {
+          eventBuffer.current.set(event.runId, [...(eventBuffer.current.get(event.runId) ?? []), event]);
+          return current;
+        }
+
+        setLiveEvents((count) => count + 1);
+        return appendWorkflowEvent(current, event);
+      });
+    });
+  }, []);
 
   async function runWorkflow() {
     setIsRunning(true);
     try {
       const result = await startWorkflow(command);
-      setRun(result);
+      const bufferedEvents = eventBuffer.current.get(result.id) ?? [];
+      eventBuffer.current.delete(result.id);
+      setRun(bufferedEvents.reduce(appendWorkflowEvent, result));
       setSource("api");
+      setLiveEvents(bufferedEvents.length);
     } catch {
       // The portfolio UI remains demoable even when the backend is not running locally.
       setRun(demoWorkflowRun(command));
       setSource("fallback");
+      setLiveEvents(0);
     } finally {
       setIsRunning(false);
     }
@@ -65,10 +113,11 @@ export function CommandCenter() {
               {source === "api" ? "Backend API" : "Demo fallback"} · {run.status}
             </span>
           </div>
-          <p className="mt-2 text-sm leading-6 text-body">{run.events[0]?.message}</p>
+          <p className="mt-2 text-sm leading-6 text-body">{run.events.at(-1)?.message}</p>
           <p className="mt-2 text-xs text-muted">
             Tool calls {run.toolCalls.length} · Approvals {run.approvals.length} · Audit events {run.auditTrail.length}
           </p>
+          {source === "api" ? <p className="mt-1 text-xs text-primary">Live events {liveEvents}</p> : null}
           {run.artifacts[0] ? (
             <div className="mt-4 rounded-md bg-canvas p-3">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Generated Report</p>

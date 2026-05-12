@@ -47,6 +47,12 @@ export type WorkflowRun = {
   }>;
 };
 
+export type WorkflowEventPayload = WorkflowRun["events"][number] & {
+  runId: string;
+  sequence?: number;
+  metadata?: Record<string, unknown>;
+};
+
 export type ApprovalItem = {
   id: string;
   runId: string;
@@ -155,7 +161,7 @@ export async function rejectApproval(approvalId: string): Promise<WorkflowRun> {
   if (!response.ok) {
     throw new Error(`Approval API failed with ${response.status}`);
   }
-  return response.json();
+  return normalizeWorkflowRun(await response.json());
 }
 
 export async function listDemoScenarios(): Promise<DemoScenario[]> {
