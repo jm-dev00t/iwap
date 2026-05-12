@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: iwap-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: IWAP_DATABASE_HOST
+        fromDatabase:
+          name: iwap-postgres
+          property: host
+      - key: IWAP_DATABASE_PORT
+        fromDatabase:
+          name: iwap-postgres
+          property: port
+      - key: IWAP_DATABASE_NAME
+        fromDatabase:
+          name: iwap-postgres
+          property: database
+      - key: IWAP_DATASOURCE_USERNAME
+        fromDatabase:
+          name: iwap-postgres
+          property: user
+      - key: IWAP_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: iwap-postgres
+          property: password
+      - key: IWAP_AI_PROVIDER
+        value: mock
+      - key: IWAP_INTEGRATION_MODE
+        value: mock
+      - key: IWAP_ALLOWED_ORIGIN_PATTERNS
+        value: https://*.vercel.app,https://*.onrender.com
+      - key: IWAP_DEMO_JWT_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: SLACK_DEFAULT_CHANNEL
+        value: "#sales-report"
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+databases:
+  - name: iwap-postgres
+    plan: free
+    databaseName: iwap
+    user: iwap
+    postgresMajorVersion: "16"

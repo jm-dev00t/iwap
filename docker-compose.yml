@@ -35,6 +35,7 @@ services:
       IWAP_AI_PROVIDER: ${IWAP_AI_PROVIDER:-mock}
       IWAP_INTEGRATION_MODE: ${IWAP_INTEGRATION_MODE:-mock}
       IWAP_DEMO_JWT_SECRET: ${IWAP_DEMO_JWT_SECRET:-change-me-for-real-deployments}
+      IWAP_ALLOWED_ORIGIN_PATTERNS: ${IWAP_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-demo-key-not-used-in-mock-mode}
       SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
       SLACK_DEFAULT_CHANNEL: "${SLACK_DEFAULT_CHANNEL:-#sales-report}"

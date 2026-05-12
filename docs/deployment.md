@@ -1,19 +1,18 @@
 # 배포 및 운영 가이드
 
-## 로컬 Docker Compose
+IWAP는 로컬 Docker Compose 실행과 외부 포트폴리오 배포를 모두 지원하도록 구성합니다. 현재 권장 공개 배포 경로는 다음입니다.
 
-IWAP의 로컬 데모는 Docker Compose를 기준으로 구성되어 있습니다.
+- Backend: Render Web Service + Render PostgreSQL
+- Frontend: Vercel Next.js
+- Mode: `mock` AI/provider 모드로 비용 없이 안정적인 데모 운영
+
+## 로컬 Docker Compose
 
 ```powershell
 copy .env.example .env
-docker compose up --build
+docker compose up --build -d
+docker compose ps
 ```
-
-구성 서비스:
-
-- `postgres`: PostgreSQL 16 + PGVector
-- `backend`: Spring Boot API 서버
-- `frontend`: Next.js standalone 서버
 
 서비스 주소:
 
@@ -21,70 +20,123 @@ docker compose up --build
 - Backend health: `http://localhost:8080/api/health`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 
-## 환경 변수
+## 주요 환경 변수
 
 | 변수 | 설명 |
 | --- | --- |
-| `IWAP_BACKEND_PORT` | 호스트에 노출할 backend 포트 |
-| `IWAP_FRONTEND_PORT` | 호스트에 노출할 frontend 포트 |
-| `IWAP_POSTGRES_PORT` | 호스트에 노출할 PostgreSQL 포트 |
-| `IWAP_DATASOURCE_URL` | backend 컨테이너가 사용할 JDBC URL |
-| `IWAP_DATASOURCE_USERNAME` | PostgreSQL 사용자 |
-| `IWAP_DATASOURCE_PASSWORD` | PostgreSQL 비밀번호 |
+| `IWAP_BACKEND_PORT` | Spring Boot 서버 포트. 외부 플랫폼의 `PORT`도 fallback으로 지원합니다. |
+| `IWAP_DATASOURCE_URL` | JDBC URL. 직접 지정하지 않으면 host/port/database 변수로 조합합니다. |
+| `IWAP_DATABASE_HOST` | 배포형 Postgres host |
+| `IWAP_DATABASE_PORT` | 배포형 Postgres port |
+| `IWAP_DATABASE_NAME` | 배포형 Postgres database |
+| `IWAP_DATASOURCE_USERNAME` | Postgres 사용자 |
+| `IWAP_DATASOURCE_PASSWORD` | Postgres 비밀번호 |
+| `IWAP_ALLOWED_ORIGIN_PATTERNS` | 프론트엔드 도메인 CORS 허용 패턴 |
+| `IWAP_DEMO_JWT_SECRET` | Demo JWT 서명 secret |
 | `NEXT_PUBLIC_IWAP_API_BASE_URL` | 브라우저에서 호출할 backend API URL |
 | `NEXT_PUBLIC_IWAP_WS_URL` | 브라우저에서 연결할 workflow WebSocket URL |
 | `IWAP_AI_PROVIDER` | `mock` 또는 실제 AI provider |
 | `IWAP_INTEGRATION_MODE` | `mock` 또는 실제 tool adapter 모드 |
-| `OPENAI_API_KEY` | OpenAI/Spring AI 연동 시 사용 |
-| `SLACK_BOT_TOKEN` | Slack 실전 발송 연동 시 사용 |
-| `SMTP_HOST` | Email 실전 발송 SMTP host |
+| `OPENAI_API_KEY` | 실제 AI provider 사용 시 필요 |
+| `SLACK_BOT_TOKEN` | 실제 Slack 발송 사용 시 필요 |
+| `SMTP_HOST` | 실제 Email 발송 사용 시 필요 |
 
-## 운영 명령
+## Render Backend 배포
 
-상태 확인:
+Repository root의 `render.yaml`은 Render Blueprint용입니다. Render 공식 Blueprint는 repository root의 YAML로 web service와 Postgres database를 정의할 수 있고, Postgres의 `host`, `port`, `database`, `user`, `password` 값을 다른 서비스 환경변수로 참조할 수 있습니다.
 
-```powershell
-docker compose ps
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f postgres
+절차:
+
+1. Render Dashboard에서 `New > Blueprint`를 선택합니다.
+2. GitHub repo `jm-dev00t/iwap`를 연결합니다.
+3. Blueprint file로 `render.yaml`을 사용합니다.
+4. 생성될 `iwap-backend`, `iwap-postgres` 리소스를 확인합니다.
+5. 최초 생성 시 `sync: false`로 표시된 secret 값은 비워두거나 실제 값을 입력합니다.
+6. 배포 후 backend URL을 확인합니다.
+
+예상 backend URL:
+
+```text
+https://iwap-backend.onrender.com
 ```
 
-서비스 종료:
+Backend 확인:
 
 ```powershell
-docker compose down
+Invoke-RestMethod https://iwap-backend.onrender.com/api/health
 ```
 
-데이터까지 초기화:
+## Vercel Frontend 배포
+
+Vercel은 monorepo에서 프로젝트 root directory를 지정할 수 있습니다. IWAP 프론트엔드는 `frontend` 폴더가 Next.js 앱 root입니다.
+
+절차:
+
+1. Vercel에서 `New Project`를 선택합니다.
+2. GitHub repo `jm-dev00t/iwap`를 import합니다.
+3. Root Directory를 `frontend`로 지정합니다.
+4. Framework Preset은 `Next.js`로 둡니다.
+5. Environment Variables를 추가합니다.
+
+필수 Vercel env:
+
+```text
+NEXT_PUBLIC_IWAP_API_BASE_URL=https://iwap-backend.onrender.com
+NEXT_PUBLIC_IWAP_WS_URL=wss://iwap-backend.onrender.com/ws/workflows
+```
+
+배포 후 frontend URL 예시:
+
+```text
+https://iwap.vercel.app
+```
+
+## CORS 설정
+
+Vercel 배포 URL이 확정되면 Render backend의 `IWAP_ALLOWED_ORIGIN_PATTERNS`를 실제 도메인에 맞춰 좁히는 것을 권장합니다.
+
+초기 배포용:
+
+```text
+https://*.vercel.app,https://*.onrender.com
+```
+
+도메인 확정 후:
+
+```text
+https://iwap.vercel.app
+```
+
+환경변수 변경 후에는 Render backend를 재배포합니다.
+
+## 배포 Smoke Test
+
+Backend:
 
 ```powershell
-docker compose down -v
+$api = "https://iwap-backend.onrender.com"
+$health = Invoke-RestMethod "$api/api/health"
+$manager = Invoke-RestMethod "$api/api/auth/demo-login" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"role":"MANAGER"}'
+
+$headers = @{ Authorization = "Bearer $($manager.accessToken)" }
+Invoke-RestMethod "$api/api/tools" -Headers $headers
 ```
 
-Frontend public env는 Next.js 빌드 시점에 브라우저 번들에 반영됩니다. API/WS URL을 바꾼 뒤에는 frontend 이미지를 다시 빌드해야 합니다.
+Frontend:
 
-```powershell
-docker compose build frontend
-docker compose up frontend
+```text
+https://<your-vercel-project>.vercel.app
 ```
 
-## 클라우드 배포 방향
-
-포트폴리오와 PoC 단계에서는 Docker Compose 실행을 기본으로 두고, 실제 고객 환경에서는 다음 구성을 권장합니다.
-
-- Backend: AWS ECS Fargate, Elastic Beanstalk, 또는 Kubernetes
-- Frontend: Vercel, AWS Amplify, 또는 ECS/Nginx
-- Database: AWS RDS PostgreSQL + PGVector
-- Secrets: AWS Secrets Manager 또는 Parameter Store
-- Logs: CloudWatch Logs
-- Report artifacts: S3
+Command Center에서 `Run workflow`를 누른 뒤 `Backend API`와 `Live events`가 표시되면 API와 WebSocket 연결이 모두 동작하는 상태입니다.
 
 ## 운영 고려사항
 
-- Mock Provider는 포트폴리오 데모 안정성을 위해 기본값으로 둡니다.
-- Windows Docker Desktop 환경에서 이미지 아키텍처 차이를 줄이기 위해 compose 서비스는 `linux/amd64` platform을 명시합니다.
-- 실제 외부 발송 Tool은 Human-in-the-Loop 승인 정책 뒤에서 실행해야 합니다.
-- 모든 Tool Call, 승인 결정, Agent 이벤트는 Audit Log에 남기는 방향으로 확장합니다.
-- AI provider 비용 관리를 위해 provider별 토큰 사용량 집계를 추후 확장 포인트로 둡니다.
-- PostgreSQL persistence는 Flyway schema와 JPA store로 연결되어 있으며 workflow history, approvals, artifacts, audit logs를 재시작 후에도 복원합니다.
+- 포트폴리오 공개 데모는 `mock` provider를 기본으로 둡니다.
+- 실제 Slack/Email 발송은 Human-in-the-Loop 승인 정책 뒤에서만 활성화합니다.
+- `IWAP_DEMO_JWT_SECRET`은 배포 환경마다 고유한 값으로 설정합니다.
+- Render 무료 인스턴스는 cold start가 있을 수 있으므로 첫 요청이 느릴 수 있습니다.
+- PostgreSQL 데이터는 Flyway schema와 JPA store로 관리되며 workflow history, approvals, artifacts, audit logs를 재시작 후에도 복원합니다.

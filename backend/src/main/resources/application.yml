@@ -2,9 +2,9 @@ spring:
   application:
     name: iwap-backend
   datasource:
-    url: ${IWAP_DATASOURCE_URL:jdbc:postgresql://localhost:5432/iwap}
-    username: ${IWAP_DATASOURCE_USERNAME:iwap}
-    password: ${IWAP_DATASOURCE_PASSWORD:iwap}
+    url: ${IWAP_DATASOURCE_URL:jdbc:postgresql://${IWAP_DATABASE_HOST:localhost}:${IWAP_DATABASE_PORT:5432}/${IWAP_DATABASE_NAME:iwap}}
+    username: ${IWAP_DATASOURCE_USERNAME:${IWAP_DATABASE_USER:iwap}}
+    password: ${IWAP_DATASOURCE_PASSWORD:${IWAP_DATABASE_PASSWORD:iwap}}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,7 +18,7 @@ spring:
       api-key: ${OPENAI_API_KEY:demo-key-not-used-in-mock-mode}
 
 server:
-  port: ${IWAP_BACKEND_PORT:8080}
+  port: ${IWAP_BACKEND_PORT:${PORT:8080}}
 
 management:
   endpoints:
@@ -35,6 +35,8 @@ iwap:
     mode: ${IWAP_INTEGRATION_MODE:mock}
   security:
     demo-jwt-secret: ${IWAP_DEMO_JWT_SECRET:change-me-for-real-deployments}
+  web:
+    allowed-origin-patterns: ${IWAP_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
 
 springdoc:
   swagger-ui:
