@@ -380,7 +380,7 @@ export default function ReportsPage() {
     return { reports: collectReports(demoWorkflowRuns()), isFallback: true };
   }, [data]);
 
-  const selectedReport = reports.find((report) => report.id === selectedReportId) ?? reports[0] ?? null;
+  const selectedReport = reports.find((report) => report.id === selectedReportId) ?? null;
 
   async function copyMarkdown(report: Report) {
     try {
@@ -443,30 +443,8 @@ export default function ReportsPage() {
           )}
         </div>
 
-        {selectedReport && isMonthlySalesReport(selectedReport) ? (
-          <div className="mt-8 grid gap-4">
-            <section className="rounded-xl border border-hairline bg-surface-plain p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">핵심 지표</p>
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                {kpis.map((kpi) => (
-                  <article className="flex items-center justify-between rounded-lg bg-surface-card p-4" key={kpi.label}>
-                    <div>
-                      <p className="text-sm text-muted">{kpi.label}</p>
-                      <p className="mt-1 text-2xl font-semibold text-ink">{kpi.value}</p>
-                    </div>
-                    <span className="rounded-full bg-success/10 px-3 py-1 text-sm font-semibold text-success">{kpi.delta}</span>
-                  </article>
-                ))}
-              </div>
-            </section>
-            <MonthlySalesDocument />
-          </div>
-        ) : null}
-
-        {selectedReport ? <div className="mt-5"><DeliveryStatus report={selectedReport} /></div> : null}
-
-        <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+        <div className="mt-8 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="grid gap-4">
             {reports.map((report) => (
               <article
                 className={`rounded-xl border p-5 shadow-soft transition ${
@@ -534,9 +512,31 @@ export default function ReportsPage() {
                     {workflowTitleLabel(selectedReport.runTitle)} · {formatDate(selectedReport.createdAt)}
                   </p>
                 </div>
-                <div className="mt-5">
-                  <MarkdownPreview content={selectedReport.content} />
-                </div>
+                {isMonthlySalesReport(selectedReport) ? (
+                  <div className="mt-5 space-y-5">
+                    <section className="rounded-xl border border-hairline bg-surface-card p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">핵심 지표</p>
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        {kpis.map((kpi) => (
+                          <article className="flex items-center justify-between rounded-lg bg-surface-plain p-4" key={kpi.label}>
+                            <div>
+                              <p className="text-sm text-muted">{kpi.label}</p>
+                              <p className="mt-1 text-2xl font-semibold text-ink">{kpi.value}</p>
+                            </div>
+                            <span className="rounded-full bg-success/10 px-3 py-1 text-sm font-semibold text-success">{kpi.delta}</span>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                    <MonthlySalesDocument />
+                    <DeliveryStatus report={selectedReport} />
+                  </div>
+                ) : (
+                  <div className="mt-5 space-y-5">
+                    <MarkdownPreview content={selectedReport.content} />
+                    <DeliveryStatus report={selectedReport} />
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex min-h-64 items-center justify-center rounded-lg bg-surface-card p-6 text-center text-sm text-muted">
