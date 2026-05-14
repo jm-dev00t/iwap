@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowUpRight, Loader2, Play } from "lucide-react";
+import { ArrowUpRight, Bot, Loader2, Send, UserRound } from "lucide-react";
 import { useState } from "react";
-import { startWorkflow as requestStartWorkflow } from "@/lib/api";
+import { demoWorkflowRun, startWorkflow as requestStartWorkflow } from "@/lib/api";
 import { statusLabel, workflowTitleLabel } from "@/lib/display-labels";
 import { demoScenarios } from "@/lib/workflow-demo";
 
@@ -16,25 +16,110 @@ type WorkflowRunResponse = {
   artifacts: Array<{ id: string; title: string }>;
 };
 
+type ChatMessage = {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
+};
+
+const defaultRequester = "manager@demo-company.com";
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function needsEmail(command: string) {
+  const normalized = command.toLowerCase();
+  return ["이메일", "메일", "email", "발송", "보내"].some((keyword) => normalized.includes(keyword));
+}
+
+function extractEmail(value: string) {
+  return value
+    .split(/\s+/)
+    .map((part) => part.replace(/^[<({]+|[>),;:]+$/g, ""))
+    .find((part) => emailPattern.test(part));
+}
+
 export function CommandCenter() {
-  const [command, setCommand] = useState(demoScenarios[0].command);
-  const [requestedBy, setRequestedBy] = useState("manager@demo-company.com");
+  const [chatInput, setChatInput] = useState(demoScenarios[0].command);
+  const [recipientEmail, setRecipientEmail] = useState<string | null>(null);
+  const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [selectedScenario, setSelectedScenario] = useState(demoScenarios[0].key);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "assistant-intro",
+      role: "assistant",
+      text: "자연어로 업무를 지시해 주세요. 이메일 발송이 필요한 업무라면 제가 받을 이메일을 먼저 물어보고 실행합니다.",
+    },
+  ]);
   const [run, setRun] = useState<WorkflowRunResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function startWorkflow() {
+  function addMessage(role: ChatMessage["role"], text: string) {
+    setMessages((current) => [...current, { id: `${role}-${Date.now()}-${current.length}`, role, text }]);
+  }
+
+  async function startWorkflow(nextCommand: string, nextRecipientEmail: string | null) {
     setIsSubmitting(true);
     setError(null);
 
+    const effectiveCommand = nextRecipientEmail ? `${nextCommand}\n수신 이메일: ${nextRecipientEmail}` : nextCommand;
+
     try {
-      setRun(await requestStartWorkflow(command, { scenarioKey: selectedScenario, requestedBy }));
+      const result = await requestStartWorkflow(effectiveCommand, {
+        scenarioKey: selectedScenario,
+        requestedBy: nextRecipientEmail ?? defaultRequester,
+      });
+      setRun(result);
+      addMessage(
+        "assistant",
+        `${workflowTitleLabel(result.title)} 실행을 시작했습니다. 결과 보고서와 전송 상태는 아래 산출물 카드에서 확인할 수 있습니다.`,
+      );
     } catch (caught) {
+      const fallbackRun = demoWorkflowRun(effectiveCommand);
+      setRun(fallbackRun);
       setError(caught instanceof Error ? caught.message : "워크플로 요청에 실패했습니다");
+      addMessage("assistant", "백엔드 응답이 늦어 데모 실행 결과로 이어서 보여줄게요. 실제 배포 환경에서는 같은 명령이 API 워크플로로 실행됩니다.");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function submitChat() {
+    const text = chatInput.trim();
+    if (!text || isSubmitting) {
+      return;
+    }
+
+    addMessage("user", text);
+    setChatInput("");
+    setError(null);
+
+    if (pendingCommand) {
+      const email = extractEmail(text);
+      if (!email) {
+        addMessage("assistant", "이메일 주소 형식으로 입력해 주세요. 예: manager@demo-company.com");
+        return;
+      }
+
+      setRecipientEmail(email);
+      setPendingCommand(null);
+      addMessage("assistant", `${email}로 보낼게요. 지금 워크플로를 실행합니다.`);
+      await startWorkflow(pendingCommand, email);
+      return;
+    }
+
+    const inlineEmail = extractEmail(text);
+    if (inlineEmail) {
+      setRecipientEmail(inlineEmail);
+    }
+
+    if (needsEmail(text) && !inlineEmail && !recipientEmail) {
+      setPendingCommand(text);
+      addMessage("assistant", "이 업무는 이메일 발송이 필요해 보여요. 받을 이메일 주소를 알려주세요.");
+      return;
+    }
+
+    addMessage("assistant", "좋아요. 입력한 자연어 명령을 워크플로로 변환해서 실행합니다.");
+    await startWorkflow(text, inlineEmail ?? recipientEmail);
   }
 
   return (
@@ -44,47 +129,76 @@ export function CommandCenter() {
         자연어 명령을 실제 업무 자동화 흐름으로 바꿉니다
       </h1>
       <p className="mt-5 max-w-2xl text-base leading-7 text-body">
-        IWAP는 계획, 실행, 검증, 보고, 알림 에이전트가 작업 보고서 생성, 고객 관리 기록,
-        알림 발송, 승인 요청, 감사 로그까지 처리하는 하이브리드형 기업 AI 자동화 플랫폼입니다.
+        아래 입력창은 AI 업무 채팅처럼 사용하는 실행 콘솔입니다. 완전한 자유 대화형 LLM 챗봇이라기보다는, 자연어 명령을 워크플로 실행으로
+        연결하는 데모 인터페이스입니다.
       </p>
 
-      <div className="mt-8 rounded-lg border border-hairline bg-canvas p-3">
-        <label className="block">
-          <span className="px-3 text-xs font-medium uppercase tracking-[0.14em] text-primary">자연어 업무 명령</span>
-          <textarea
-            className="mt-2 h-28 w-full resize-none bg-transparent p-3 text-base leading-7 text-ink outline-none"
-            value={command}
-            onChange={(event) => setCommand(event.target.value)}
-            aria-label="워크플로 명령"
-            placeholder="예: 이번 달 매출 보고서 만들어서 슬랙 채널과 이메일로 보내줘"
-          />
-        </label>
-        <div className="grid gap-3 border-t border-hairline px-3 pt-3 md:grid-cols-[1fr_auto] md:items-center">
-          <label className="min-w-0 text-sm text-muted">
-            <span className="mb-1 block text-xs font-medium text-muted">요청자 이메일</span>
-            <input
-              className="h-10 w-full rounded-md border border-hairline bg-surface-plain px-3 text-sm text-ink outline-none focus:border-primary"
-              type="email"
-              value={requestedBy}
-              onChange={(event) => setRequestedBy(event.target.value)}
-              aria-label="요청자 이메일"
-              placeholder="manager@demo-company.com"
-            />
-          </label>
-          <button
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary-active disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isSubmitting || command.trim().length === 0 || requestedBy.trim().length === 0}
-            onClick={startWorkflow}
-            type="button"
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            워크플로 실행
-          </button>
+      <div className="mt-8 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-soft">
+        <div className="border-b border-hairline bg-surface-card px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">AI 업무 채팅</p>
+          <p className="mt-1 text-sm text-muted">업무를 말하면 필요한 정보만 추가로 물어보고 실행합니다.</p>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3">
-          <p className="text-sm text-muted">모의 AI 모드 · 실제 연동 키가 있으면 운영 모드로 전환 가능</p>
-          {run ? <p className="text-sm font-medium text-ink">{workflowTitleLabel(run.title)} · {statusLabel(run.status)}</p> : null}
-          {error ? <p className="text-sm font-medium text-primary-active">{error}</p> : null}
+
+        <div className="max-h-[360px] space-y-4 overflow-y-auto px-4 py-5">
+          {messages.map((message) => {
+            const isUser = message.role === "user";
+            const Icon = isUser ? UserRound : Bot;
+            return (
+              <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`} key={message.id}>
+                {!isUser ? (
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-dark text-canvas">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                ) : null}
+                <div
+                  className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+                    isUser ? "bg-primary text-white" : "bg-surface-plain text-body"
+                  }`}
+                >
+                  {message.text}
+                </div>
+                {isUser ? (
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-card text-primary">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="border-t border-hairline bg-surface-plain p-3">
+          <div className="flex gap-2 rounded-lg border border-hairline bg-canvas p-2 focus-within:border-primary">
+            <textarea
+              className="min-h-12 flex-1 resize-none bg-transparent px-2 py-2 text-sm leading-6 text-ink outline-none"
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void submitChat();
+                }
+              }}
+              aria-label="AI 업무 채팅 입력"
+              placeholder={pendingCommand ? "받을 이메일 주소를 입력하세요" : "예: 이번 달 매출 보고서 만들어서 이메일로 보내줘"}
+            />
+            <button
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary text-white hover:bg-primary-active disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSubmitting || chatInput.trim().length === 0}
+              onClick={() => void submitChat()}
+              type="button"
+              aria-label="메시지 보내기"
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <p className="text-muted">
+              {recipientEmail ? `수신 이메일: ${recipientEmail}` : "이메일 발송이 필요하면 AI가 수신 이메일을 물어봅니다."}
+            </p>
+            {run ? <p className="font-medium text-ink">{workflowTitleLabel(run.title)} · {statusLabel(run.status)}</p> : null}
+            {error ? <p className="font-medium text-primary-active">{error}</p> : null}
+          </div>
         </div>
       </div>
 
@@ -96,10 +210,19 @@ export function CommandCenter() {
               className="group flex min-h-24 items-start gap-3 rounded-lg bg-surface-card p-4 text-left"
               key={scenario.key}
               onClick={() => {
-                setCommand(scenario.command);
+                setChatInput(scenario.command);
                 setSelectedScenario(scenario.key);
                 setRun(null);
                 setError(null);
+                setPendingCommand(null);
+                setMessages((current) => [
+                  ...current,
+                  {
+                    id: `assistant-scenario-${scenario.key}-${Date.now()}`,
+                    role: "assistant",
+                    text: `"${scenario.label}" 예시 명령을 입력창에 넣어뒀습니다. 그대로 보내거나 문장을 바꿔서 지시해 주세요.`,
+                  },
+                ]);
               }}
               type="button"
             >
