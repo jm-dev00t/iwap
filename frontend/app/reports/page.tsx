@@ -3,7 +3,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { CheckCircle2, Clipboard, Download, Eye, FileText, Mail, MessageSquare, XCircle } from "lucide-react";
+import { CheckCircle2, Clipboard, Database, Download, Eye, FileText, Mail, MessageSquare, XCircle } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeading } from "@/components/page-heading";
 import { demoWorkflowRuns, listWorkflowRuns, type WorkflowRun } from "@/lib/api";
@@ -53,6 +53,95 @@ const kpis = [
   { label: "총주문", value: "189건", delta: "+6.8%" },
   { label: "평균 마진", value: "34.2%", delta: "+0.9%p" },
 ];
+
+const reportSourceData = {
+  monthly: {
+    title: "월간 매출 집계 원천 자료",
+    description: "매출 데이터 커넥터가 채널별 매출, 주문 수, 목표금액, 마진율을 수집한 뒤 보고서 생성기가 요약과 차트를 만들었습니다.",
+    sources: ["sales-data", "order ledger", "monthly target sheet"],
+    tables: [
+      {
+        title: "채널별 매출 실적",
+        columns: ["채널", "5월 매출", "4월 매출", "목표", "주문", "마진율"],
+        rows: monthlySalesData.map((row) => [
+          row.channel,
+          `${row.current.toFixed(1)}M원`,
+          `${row.previous.toFixed(1)}M원`,
+          `${row.target.toFixed(1)}M원`,
+          `${row.orders}건`,
+          `${row.margin}%`,
+        ]),
+      },
+      {
+        title: "보고서 생성 규칙",
+        columns: ["검증 항목", "값", "처리"],
+        rows: [
+          ["전월 대비", "+9.3%", "증감 사유 요약"],
+          ["목표 달성률", "106.9%", "초과 달성 채널 강조"],
+          ["최고 기여 채널", "B2B Direct", "추천 액션 생성"],
+        ],
+      },
+    ],
+  },
+  weekly: {
+    title: "주간 영업실적 수집 자료",
+    description: "CRM 활동 로그와 영업 파이프라인을 합쳐 리드 전환율, Top Account, 다음 액션을 계산했습니다.",
+    sources: ["crm activity", "pipeline board", "meeting notes"],
+    tables: [
+      {
+        title: "영업 활동 요약",
+        columns: ["지표", "이번 주", "전주", "변화"],
+        rows: [
+          ["신규 리드", "64건", "57건", "+12.3%"],
+          ["미팅 전환", "18건", "17건", "+5.9%"],
+          ["리드 전환율", "28.1%", "26.4%", "+1.7%p"],
+          ["예상 파이프라인", "94,000,000원", "86,700,000원", "+8.4%"],
+        ],
+      },
+      {
+        title: "Top Account 영업실적",
+        columns: ["고객", "단계", "예상 금액", "다음 액션"],
+        rows: [
+          ["Blue Harbor Retail", "제안 검토", "42,000,000원", "ROI 자료 발송"],
+          ["Northwind Partners", "가격 협의", "31,000,000원", "계약 조건 조율"],
+          ["Urban Supply Co.", "기술 검토", "21,000,000원", "보안 체크리스트 회신"],
+        ],
+      },
+    ],
+  },
+  customer: {
+    title: "신규 고객 온보딩 수집 자료",
+    description: "영업 전환 기록과 고객 담당자 정보를 기반으로 CRM 등록, 환영 메일, 담당자 알림 작업을 만들었습니다.",
+    sources: ["crm lead record", "account owner map", "welcome template"],
+    tables: [
+      {
+        title: "고객 등록 정보",
+        columns: ["항목", "값", "처리"],
+        rows: [
+          ["고객사", "Blue Harbor Retail", "CRM 계정 생성"],
+          ["세그먼트", "Growth Retail", "온보딩 템플릿 선택"],
+          ["담당자", "account-owner@demo-company.com", "내부 알림 지정"],
+        ],
+      },
+    ],
+  },
+  inventory: {
+    title: "재고 부족 판단 자료",
+    description: "재고 현황과 재주문 기준을 비교해 승인 대기 구매 알림 초안을 만들었습니다.",
+    sources: ["inventory snapshot", "reorder policy", "purchase approval rule"],
+    tables: [
+      {
+        title: "재고 부족 품목",
+        columns: ["SKU", "품목", "현재 재고", "재주문 기준", "권장 발주"],
+        rows: [
+          ["SKU-RED-001", "레드 패키지 박스", "12", "50", "120"],
+          ["SKU-GRN-014", "그린 라벨 세트", "8", "40", "90"],
+          ["SKU-BLK-021", "블랙 완충재", "17", "60", "100"],
+        ],
+      },
+    ],
+  },
+};
 
 function isMonthlySalesReport(report: Report) {
   return report.title.includes("Monthly Sales") || report.title.includes("월간 매출");
@@ -196,6 +285,66 @@ function MarkdownPreview({ content }: { content: string }) {
     <div className="space-y-3 text-sm leading-7 text-body">
       {rendered}
     </div>
+  );
+}
+
+function ReportSourceDataPanel({ scenario }: { scenario: ReturnType<typeof reportScenario> }) {
+  if (scenario === "default") {
+    return null;
+  }
+
+  const data = reportSourceData[scenario];
+
+  return (
+    <section className="rounded-xl border border-hairline bg-surface-card p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">리포트 생성 자료</p>
+          <h3 className="mt-2 text-lg font-semibold text-ink">{data.title}</h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-body">{data.description}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {data.sources.map((source) => (
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface-plain px-3 py-1 text-xs font-medium text-muted" key={source}>
+              <Database className="h-3.5 w-3.5 text-primary" />
+              {source}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4">
+        {data.tables.map((table) => (
+          <div className="overflow-x-auto rounded-lg border border-hairline bg-surface-plain" key={table.title}>
+            <div className="border-b border-hairline px-4 py-3">
+              <p className="text-sm font-semibold text-ink">{table.title}</p>
+            </div>
+            <table className="min-w-full text-sm">
+              <thead className="bg-canvas text-muted">
+                <tr>
+                  {table.columns.map((column) => (
+                    <th className="px-3 py-2 text-left font-semibold" key={column}>
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {table.rows.map((row, rowIndex) => (
+                  <tr key={`${table.title}-${rowIndex}`}>
+                    {row.map((cell, cellIndex) => (
+                      <td className={`px-3 py-2 ${cellIndex === 0 ? "font-medium text-ink" : "text-body"}`} key={`${cell}-${cellIndex}`}>
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -516,6 +665,7 @@ export default function ReportsPage() {
                 </div>
                 {isMonthlySalesReport(selectedReport) ? (
                   <div className="mt-5 space-y-5">
+                    <ReportSourceDataPanel scenario="monthly" />
                     <section className="rounded-xl border border-hairline bg-surface-card p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">핵심 지표</p>
                       <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -535,6 +685,7 @@ export default function ReportsPage() {
                   </div>
                 ) : (
                   <div className="mt-5 space-y-5">
+                    <ReportSourceDataPanel scenario={reportScenario(selectedReport)} />
                     <MarkdownPreview content={selectedReport.content} />
                     <DeliveryStatus report={selectedReport} />
                   </div>
