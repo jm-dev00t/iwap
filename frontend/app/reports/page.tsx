@@ -24,6 +24,8 @@ type CopyStatus = {
   message: string;
 } | null;
 
+const REPORTS_PER_PAGE = 4;
+
 function collectReports(runs: WorkflowRun[]): Report[] {
   return runs.flatMap((run) =>
     run.artifacts.map((artifact) => ({
@@ -161,6 +163,40 @@ function reportScenario(report: Report) {
     return "weekly";
   }
   return "default";
+}
+
+const reportScenarioOrder: Record<ReturnType<typeof reportScenario>, number> = {
+  monthly: 0,
+  weekly: 1,
+  customer: 2,
+  inventory: 3,
+  default: 4,
+};
+
+function reportCreatedTime(report: Report) {
+  const time = new Date(report.createdAt).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function compactReportsByScenario(reports: Report[]) {
+  const latestByScenario = new Map<string, Report>();
+
+  reports.forEach((report) => {
+    const scenario = reportScenario(report);
+    const key = scenario === "default" ? `default-${workflowTitleLabel(report.title)}` : scenario;
+    const current = latestByScenario.get(key);
+
+    if (!current || reportCreatedTime(report) > reportCreatedTime(current)) {
+      latestByScenario.set(key, report);
+    }
+  });
+
+  return Array.from(latestByScenario.values()).sort((left, right) => {
+    const leftScenario = reportScenario(left);
+    const rightScenario = reportScenario(right);
+    const orderDiff = reportScenarioOrder[leftScenario] - reportScenarioOrder[rightScenario];
+    return orderDiff === 0 ? reportCreatedTime(right) - reportCreatedTime(left) : orderDiff;
+  });
 }
 
 function formatDate(value: string) {
@@ -517,6 +553,7 @@ function DeliveryStatus({ report }: { report: Report }) {
 export default function ReportsPage() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<CopyStatus>(null);
+  const [reportPage, setReportPage] = useState(1);
   const { data, isError, isLoading } = useQuery({
     queryKey: ["workflow-reports"],
     queryFn: listWorkflowRuns,
@@ -531,7 +568,11 @@ export default function ReportsPage() {
     return { reports: collectReports(demoWorkflowRuns()), isFallback: true };
   }, [data]);
 
-  const selectedReport = reports.find((report) => report.id === selectedReportId) ?? null;
+  const scenarioReports = useMemo(() => compactReportsByScenario(reports), [reports]);
+  const totalReportPages = Math.max(1, Math.ceil(scenarioReports.length / REPORTS_PER_PAGE));
+  const currentReportPage = Math.min(reportPage, totalReportPages);
+  const pagedReports = scenarioReports.slice((currentReportPage - 1) * REPORTS_PER_PAGE, currentReportPage * REPORTS_PER_PAGE);
+  const selectedReport = scenarioReports.find((report) => report.id === selectedReportId) ?? null;
 
   async function copyMarkdown(report: Report) {
     try {
@@ -581,6 +622,10 @@ export default function ReportsPage() {
                   ? "생성된 보고서가 없어 데모 보고서를 표시합니다."
                   : "보고서 산출물 정보 연결됨"}
           </div>
+          <div className="rounded-full bg-surface-card px-4 py-2 text-sm text-body">
+            시나리오별 대표 {scenarioReports.length}건 표시
+            {reports.length > scenarioReports.length ? ` · 누적 ${reports.length - scenarioReports.length}건 정리됨` : ""}
+          </div>
           {copyStatus && (
             <div
               className={`flex max-w-full items-center gap-2 rounded-full px-4 py-2 text-sm ${
@@ -595,62 +640,88 @@ export default function ReportsPage() {
         </div>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <div className="grid gap-4">
-            {reports.map((report) => (
-              <article
-                className={`rounded-xl border p-5 shadow-soft transition ${
-                  selectedReport?.id === report.id ? "border-primary bg-surface-plain" : "border-hairline bg-surface-card"
-                }`}
-                key={`${report.runId}-${report.id}`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="rounded-full bg-canvas p-2 text-primary">
-                      <FileText className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-teal">{report.format === "MARKDOWN" ? "마크다운" : report.format}</p>
-                      <h2 className="mt-1 text-lg font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
+          <div>
+            <div className="grid gap-4">
+              {pagedReports.map((report) => (
+                <article
+                  className={`rounded-xl border p-5 shadow-soft transition ${
+                    selectedReport?.id === report.id ? "border-primary bg-surface-plain" : "border-hairline bg-surface-card"
+                  }`}
+                  key={`${report.runId}-${report.id}`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="rounded-full bg-canvas p-2 text-primary">
+                        <FileText className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-teal">{report.format === "MARKDOWN" ? "마크다운" : report.format}</p>
+                        <h2 className="mt-1 text-lg font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
+                      </div>
                     </div>
+                    <span className="rounded-full bg-canvas px-3 py-1 text-xs font-medium text-muted">{formatDate(report.createdAt)}</span>
                   </div>
-                  <span className="rounded-full bg-canvas px-3 py-1 text-xs font-medium text-muted">{formatDate(report.createdAt)}</span>
-                </div>
 
-                <p className="mt-4 text-sm leading-6 text-body">{report.summary}</p>
-                <div className="mt-4 rounded-lg bg-surface-plain p-3">
-                  <p className="text-xs font-medium text-muted">워크플로</p>
-                  <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
-                  <p className="mt-2 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
-                </div>
+                  <p className="mt-4 text-sm leading-6 text-body">{report.summary}</p>
+                  <div className="mt-4 rounded-lg bg-surface-plain p-3">
+                    <p className="text-xs font-medium text-muted">워크플로</p>
+                    <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
+                    <p className="mt-2 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
+                  </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <button
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-surface-dark px-3 py-2 text-sm font-semibold text-canvas transition hover:bg-primary"
-                    onClick={() => setSelectedReportId(report.id)}
-                    type="button"
-                  >
-                    <Eye className="h-4 w-4 shrink-0" />
-                    <span className="whitespace-nowrap">미리보기</span>
-                  </button>
-                  <button
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
-                    onClick={() => copyMarkdown(report)}
-                    type="button"
-                  >
-                    <Clipboard className="h-4 w-4 shrink-0" />
-                    <span className="whitespace-nowrap">마크다운 복사</span>
-                  </button>
-                  <button
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
-                    onClick={() => downloadMarkdown(report)}
-                    type="button"
-                  >
-                    <Download className="h-4 w-4 shrink-0" />
-                    <span className="whitespace-nowrap">.md 다운로드</span>
-                  </button>
-                </div>
-              </article>
-            ))}
+                  <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-surface-dark px-3 py-2 text-sm font-semibold text-canvas transition hover:bg-primary"
+                      onClick={() => setSelectedReportId(report.id)}
+                      type="button"
+                    >
+                      <Eye className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">미리보기</span>
+                    </button>
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
+                      onClick={() => copyMarkdown(report)}
+                      type="button"
+                    >
+                      <Clipboard className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">마크다운 복사</span>
+                    </button>
+                    <button
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
+                      onClick={() => downloadMarkdown(report)}
+                      type="button"
+                    >
+                      <Download className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">.md 다운로드</span>
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {totalReportPages > 1 ? (
+              <div className="mt-4 flex items-center justify-between rounded-lg border border-hairline bg-surface-card px-3 py-2">
+                <button
+                  className="rounded-md px-3 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={currentReportPage === 1}
+                  onClick={() => setReportPage((page) => Math.max(1, page - 1))}
+                  type="button"
+                >
+                  이전
+                </button>
+                <span className="text-sm text-muted">
+                  {currentReportPage} / {totalReportPages}
+                </span>
+                <button
+                  className="rounded-md px-3 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={currentReportPage === totalReportPages}
+                  onClick={() => setReportPage((page) => Math.min(totalReportPages, page + 1))}
+                  type="button"
+                >
+                  다음
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <aside className="rounded-xl border border-hairline bg-surface-plain p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-auto">
