@@ -96,6 +96,14 @@ class WorkflowOrchestratorTest {
         assertThat(run.toolCalls())
                 .extracting(toolCall -> toolCall.toolName())
                 .containsExactly("sales-data", "report-generator", "slack", "email");
+        assertThat(run.artifacts()).hasSize(1);
+        assertThat(run.artifacts().getFirst().content())
+                .contains("143,300,000원")
+                .contains("B2B Direct")
+                .contains("Online Store")
+                .contains("#sales-report")
+                .contains("manager@demo-company.com")
+                .contains("추천 액션");
         assertThat(run.auditTrail()).hasSizeGreaterThanOrEqualTo(5);
         assertThat(run.approvals()).isEmpty();
     }
@@ -137,7 +145,12 @@ class WorkflowOrchestratorTest {
                 .extracting(toolCall -> toolCall.toolName())
                 .containsExactly("crm", "email", "slack");
         assertThat(run.approvals()).isEmpty();
-        assertThat(run.artifacts()).isEmpty();
+        assertThat(run.artifacts()).hasSize(1);
+        assertThat(run.artifacts().getFirst().content())
+                .contains("Blue Harbor Retail")
+                .contains("환영 이메일")
+                .contains("CRM 등록")
+                .contains("담당자 알림");
     }
 
     @Test
@@ -157,5 +170,28 @@ class WorkflowOrchestratorTest {
                 .containsExactly("sales-data", "report-generator", "email");
         assertThat(run.artifacts()).hasSize(1);
         assertThat(run.artifacts().getFirst().format()).isEqualTo(ReportFormat.PDF);
+        assertThat(run.artifacts().getFirst().content())
+                .contains("주간 영업 실적")
+                .contains("리드 전환율")
+                .contains("Top Account")
+                .contains("director@demo-company.com");
+    }
+
+    @Test
+    void lowInventoryScenarioCreatesApprovalDraftArtifact() {
+        WorkflowOrchestrator orchestrator = new WorkflowOrchestrator();
+
+        WorkflowRun run = orchestrator.start(
+                "재고 부족 제품 리스트 뽑아서 구매팀 카카오톡으로 보내",
+                "low-inventory",
+                "operator@demo-company.com"
+        );
+
+        assertThat(run.artifacts()).hasSize(1);
+        assertThat(run.artifacts().getFirst().content())
+                .contains("재고 부족 구매 알림 초안")
+                .contains("SKU-RED-001")
+                .contains("승인 대기")
+                .contains("구매팀");
     }
 }

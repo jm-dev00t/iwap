@@ -308,10 +308,42 @@ export function demoWorkflowRuns(): WorkflowRun[] {
         { toolName: "email", purpose: "환영 이메일을 발송합니다.", status: "COMPLETED" },
         { toolName: "slack", purpose: "담당자에게 알립니다.", status: "COMPLETED" },
       ],
+      artifacts: [
+        {
+          id: "report-demo-customer",
+          title: "신규 고객 온보딩 자동화",
+          format: "MARKDOWN",
+          summary: "신규 고객 CRM 등록, 환영 이메일, 담당자 알림 결과가 정리되었습니다.",
+          content:
+            "# 신규 고객 온보딩 처리 결과\n\n## 고객 정보\n\n| 항목 | 값 |\n| --- | --- |\n| 고객사 | Blue Harbor Retail |\n| 세그먼트 | Growth Retail |\n| 담당자 | account-owner@demo-company.com |\n| 상태 | CRM 등록 완료 |\n\n## 처리 결과\n\n- CRM 등록: 고객 프로필과 영업 담당자 매핑을 생성했습니다.\n- 환영 이메일: 제품 소개, 초기 미팅 링크, 담당자 연락처를 포함한 메일을 발송했습니다.\n- 담당자 알림: Slack 담당자 채널에 신규 고객 온보딩 완료 알림을 게시했습니다.\n\n## 다음 액션\n\n1. 3영업일 안에 첫 사용 교육 일정을 확정합니다.\n2. CRM에 초기 관심 상품과 예상 매출 규모를 보강합니다.\n3. 14일 후 온보딩 만족도 확인 알림을 예약합니다.",
+          createdAt: new Date().toISOString(),
+        },
+      ],
     },
     {
       ...demoWorkflowRun("재고 부족 제품 리스트 뽑아서 구매팀 카카오톡으로 보내"),
       id: "demo-low-inventory",
+    },
+    {
+      ...demoWorkflowRun("주간 영업 실적 분석해서 PDF 리포트 생성 후 공유"),
+      id: "demo-weekly-sales",
+      title: "주간 영업 리포트 생성",
+      toolCalls: [
+        { toolName: "sales-data", purpose: "주간 영업 활동 샘플 데이터를 읽습니다.", status: "COMPLETED" },
+        { toolName: "report-generator", purpose: "주간 영업 실적 PDF 산출물을 생성합니다.", status: "COMPLETED" },
+        { toolName: "email", purpose: "영업 리더에게 리포트를 공유합니다.", status: "COMPLETED" },
+      ],
+      artifacts: [
+        {
+          id: "report-demo-weekly",
+          title: "주간 영업 리포트 생성",
+          format: "PDF",
+          summary: "주간 영업 실적, 리드 전환율, Top Account, 다음 액션이 포함된 리포트가 생성되었습니다.",
+          content:
+            "# 주간 영업 실적 리포트\n\n## Executive Summary\n\n이번 주 영업팀은 신규 리드 64건 중 18건을 미팅으로 전환했고, 리드 전환율은 28.1%입니다. Top Account 3곳의 예상 파이프라인은 94,000,000원입니다.\n\n## 핵심 지표\n\n| 지표 | 값 | 전주 대비 |\n| --- | ---: | ---: |\n| 신규 리드 | 64건 | +12.3% |\n| 미팅 전환 | 18건 | +5.9% |\n| 리드 전환율 | 28.1% | +1.7%p |\n| 예상 파이프라인 | 94,000,000원 | +8.4% |\n\n## Top Account\n\n| 고객 | 단계 | 예상 금액 | 다음 액션 |\n| --- | --- | ---: | --- |\n| Blue Harbor Retail | 제안 검토 | 42,000,000원 | ROI 자료 발송 |\n| Northwind Partners | 가격 협의 | 31,000,000원 | 계약 조건 조율 |\n| Urban Supply Co. | 기술 검토 | 21,000,000원 | 보안 체크리스트 회신 |\n\n## Email 공유 미리보기\n\n- 제목: [IWAP] 주간 영업 실적 리포트\n- 수신자: director@demo-company.com\n- 첨부 형식: PDF\n- 상태: 성공",
+          createdAt: new Date().toISOString(),
+        },
+      ],
     },
   ];
 }
@@ -355,7 +387,10 @@ export function demoWorkflowRun(command: string): WorkflowRun {
       },
     ],
     toolCalls: approvalRequired
-      ? []
+      ? [
+          { toolName: "inventory", purpose: "재고 부족 품목을 조회합니다.", status: "COMPLETED" },
+          { toolName: "kakaowork", purpose: "승인 후 구매팀 알림을 보냅니다.", status: "PENDING" },
+        ]
       : [
           { toolName: "sales-data", purpose: "월간 매출 샘플 데이터를 읽습니다.", status: "COMPLETED" },
           { toolName: "report-generator", purpose: "월간 매출 보고서 산출물을 생성합니다.", status: "COMPLETED" },
@@ -372,15 +407,25 @@ export function demoWorkflowRun(command: string): WorkflowRun {
         ]
       : [],
     artifacts: approvalRequired
-      ? []
+      ? [
+          {
+            id: "report-demo-inventory",
+            title: "재고 부족 구매팀 알림",
+            format: "MARKDOWN",
+            summary: "재고 부족 구매 알림 초안이 생성되었고 구매팀 발송 전 승인 대기 상태입니다.",
+            content:
+              "# 재고 부족 구매 알림 초안\n\n## 승인 상태\n\n- 현재 상태: 승인 대기\n- 승인 필요 사유: 구매팀 알림은 실제 발주 활동으로 이어질 수 있습니다.\n- 발송 예정 채널: 구매팀 카카오워크/운영 알림방\n\n## 재고 부족 품목\n\n| SKU | 품목 | 현재 재고 | 재주문 기준 | 권장 발주 |\n| --- | --- | ---: | ---: | ---: |\n| SKU-RED-001 | 레드 패키지 박스 | 12 | 50 | 120 |\n| SKU-GRN-014 | 그린 라벨 세트 | 8 | 40 | 90 |\n| SKU-BLK-021 | 블랙 완충재 | 17 | 60 | 100 |\n\n## 구매팀 전송 문안\n\n- 메시지: 재고 부족 SKU 3건이 확인되었습니다. 우선 발주 검토가 필요합니다.\n- 상태: 사람 승인 전송 대기",
+            createdAt: new Date().toISOString(),
+          },
+        ]
       : [
           {
             id: "report-demo",
             title: "월간 매출 보고서 자동화",
             format: "MARKDOWN",
-            summary: "에이전트 워크플로가 도구 호출 4건과 함께 완료되었습니다.",
+            summary: "2026년 5월 총매출 143,300,000원, 전월 대비 9.3% 증가 리포트가 생성되고 Slack/Email 공유까지 완료되었습니다.",
             content:
-              "# 실행 요약\n\n- 계획 에이전트가 워크플로 실행 계획을 만들었습니다.\n- 실행 에이전트가 매출 데이터, 보고서 생성기, 슬랙, 이메일 도구 호출을 완료했습니다.\n- 검증 에이전트가 수신자와 보고서 산출물을 확인했습니다.",
+              "# 2026년 5월 월간 매출 보고서\n\n## Executive Summary\n\n2026년 5월 총매출은 143,300,000원으로 전월 131,000,000원 대비 9.3% 증가했습니다. B2B Direct 채널이 전체 매출의 58.8%를 차지했고, Online Store는 주문 수 기준으로 가장 활발했습니다.\n\n## 핵심 지표\n\n| 지표 | 2026년 5월 | 2026년 4월 | 변화 |\n| --- | ---: | ---: | ---: |\n| 총매출 | 143,300,000원 | 131,000,000원 | +9.3% |\n| 총주문 | 189건 | 177건 | +6.8% |\n| 가중 평균 매출총이익률 | 34.2% | 33.3% | +0.9%p |\n\n## Slack 전송 요약\n\n- 채널: #sales-report\n- 메시지: 5월 총매출 143.3M원, 전월 대비 +9.3%. B2B Direct가 58.8% 기여.\n- 상태: 성공\n\n## Email 전송 미리보기\n\n- 제목: [IWAP] 2026년 5월 월간 매출 보고서\n- 수신자: manager@demo-company.com, finance-lead@demo-company.com\n- 상태: 성공\n\n## 추천 액션\n\n1. B2B Direct 고마진 고객군을 별도 세그먼트로 관리합니다.\n2. Online Store는 재구매 알림과 장바구니 리마인더 자동화를 붙입니다.\n3. Partner Reseller는 성장률이 높아 주간 리포트에서 추가 모니터링합니다.",
             createdAt: new Date().toISOString(),
           },
         ],

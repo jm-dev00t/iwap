@@ -149,17 +149,79 @@ VALUES
         'run-demo-monthly-sales',
         'Monthly Sales Report',
         'MARKDOWN',
-        'Monthly sales report was generated and shared.',
-        '# Monthly Sales Report\n\n- Revenue summary generated from sample data.\n- Slack and email delivery recorded.',
+        '2026년 5월 총매출 143,300,000원, 전월 대비 9.3% 증가 리포트가 생성되고 Slack/Email 공유까지 완료되었습니다.',
+        $$# 2026년 5월 월간 매출 보고서
+
+## 핵심 지표
+
+| 지표 | 2026년 5월 | 2026년 4월 | 변화 |
+| --- | ---: | ---: | ---: |
+| 총매출 | 143,300,000원 | 131,000,000원 | +9.3% |
+| 총주문 | 189건 | 177건 | +6.8% |
+| 가중 평균 매출총이익률 | 34.2% | 33.3% | +0.9%p |
+
+## Slack/Email 전송
+
+- Slack 채널: #sales-report
+- Email 수신자: manager@demo-company.com, finance-lead@demo-company.com
+- 상태: 성공$$,
         NOW() - INTERVAL '3 hours 55 minutes'
+    ),
+    (
+        'report-demo-customer-onboarding',
+        'run-demo-customer-onboarding',
+        'New Customer Onboarding',
+        'MARKDOWN',
+        '신규 고객 CRM 등록, 환영 이메일, 담당자 알림 결과가 정리되었습니다.',
+        $$# 신규 고객 온보딩 처리 결과
+
+| 항목 | 값 |
+| --- | --- |
+| 고객사 | Blue Harbor Retail |
+| 담당자 | account-owner@demo-company.com |
+| 상태 | CRM 등록 완료 |
+
+- 환영 이메일 발송: 성공
+- 담당자 알림: 성공
+- 다음 액션: 첫 사용 교육 일정 확정$$,
+        NOW() - INTERVAL '1 hour 52 minutes'
+    ),
+    (
+        'report-demo-low-inventory',
+        'run-demo-low-inventory',
+        'Low Inventory Purchasing Alert',
+        'MARKDOWN',
+        '재고 부족 구매 알림 초안이 생성되었고 구매팀 발송 전 승인 대기 상태입니다.',
+        $$# 재고 부족 구매 알림 초안
+
+| SKU | 품목 | 현재 재고 | 재주문 기준 | 권장 발주 |
+| --- | --- | ---: | ---: | ---: |
+| SKU-RED-001 | 레드 패키지 박스 | 12 | 50 | 120 |
+| SKU-GRN-014 | 그린 라벨 세트 | 8 | 40 | 90 |
+| SKU-BLK-021 | 블랙 완충재 | 17 | 60 | 100 |
+
+- 발송 예정 채널: 구매팀 알림방
+- 상태: 승인 대기$$,
+        NOW() - INTERVAL '43 minutes'
     ),
     (
         'report-demo-weekly-sales',
         'run-demo-weekly-sales',
         'Weekly Sales Performance Report',
         'PDF',
-        'Weekly sales performance report was generated.',
-        '# Weekly Sales Performance Report\n\n- Ranking and conversion summary generated from sample data.',
+        '주간 영업 실적, 리드 전환율, Top Account, 다음 액션이 포함된 리포트가 생성되었습니다.',
+        $$# 주간 영업 실적 리포트
+
+| 지표 | 값 | 전주 대비 |
+| --- | ---: | ---: |
+| 신규 리드 | 64건 | +12.3% |
+| 미팅 전환 | 18건 | +5.9% |
+| 리드 전환율 | 28.1% | +1.7%p |
+| 예상 파이프라인 | 94,000,000원 | +8.4% |
+
+- Top Account: Blue Harbor Retail, Northwind Partners, Urban Supply Co.
+- Email 수신자: director@demo-company.com
+- 상태: 성공$$,
         NOW() - INTERVAL '20 minutes'
     );
 

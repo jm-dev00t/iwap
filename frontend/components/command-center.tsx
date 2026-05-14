@@ -13,6 +13,7 @@ type WorkflowRunResponse = {
   events: Array<{ message: string }>;
   toolCalls: Array<{ toolName: string }>;
   approvals: Array<{ reason: string }>;
+  artifacts: Array<{ id: string; title: string }>;
 };
 
 export function CommandCenter() {
@@ -118,7 +119,7 @@ export function CommandCenter() {
       </div>
 
       {run ? (
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
+        <div className="mt-6 grid gap-3 md:grid-cols-4">
           <div className="rounded-lg bg-surface-card p-4">
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">실행 ID</p>
             <p className="mt-2 break-all font-mono text-sm text-ink">{run.id}</p>
@@ -131,6 +132,14 @@ export function CommandCenter() {
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">도구 호출</p>
             <p className="mt-2 text-2xl font-semibold text-ink">{run.toolCalls.length}</p>
           </div>
+          <a
+            className="flex min-h-28 flex-col justify-between rounded-lg bg-surface-dark p-4 text-canvas transition hover:bg-primary"
+            href="/reports"
+          >
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-canvas/70">산출물</span>
+            <span className="text-lg font-semibold">{run.artifacts.length > 0 ? "생성 보고서 보기" : "보고서 화면 열기"}</span>
+            <span className="text-sm text-canvas/70">전송 상태와 차트 확인</span>
+          </a>
         </div>
       ) : null}
     </section>
