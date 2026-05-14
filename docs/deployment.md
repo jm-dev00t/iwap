@@ -31,7 +31,7 @@ docker compose ps
 | `IWAP_DATABASE_NAME` | 배포형 Postgres database |
 | `IWAP_DATASOURCE_USERNAME` | Postgres 사용자 |
 | `IWAP_DATASOURCE_PASSWORD` | Postgres 비밀번호 |
-| `IWAP_ALLOWED_ORIGIN_PATTERNS` | 프론트엔드 도메인 CORS 허용 패턴 |
+| `IWAP_WEB_ALLOWED_ORIGIN_PATTERNS` | 프론트엔드 도메인과 WebSocket CORS 허용 패턴. 예전 이름 `IWAP_ALLOWED_ORIGIN_PATTERNS`도 fallback으로 동작하지만 Render에는 이 값을 사용합니다. |
 | `IWAP_DEMO_JWT_SECRET` | Demo JWT 서명 secret |
 | `NEXT_PUBLIC_IWAP_API_BASE_URL` | 브라우저에서 호출할 backend API URL |
 | `NEXT_PUBLIC_IWAP_WS_URL` | 브라우저에서 연결할 workflow WebSocket URL |
@@ -51,8 +51,9 @@ Repository root의 `render.yaml`은 Render Blueprint용입니다. Render 공식 
 2. GitHub repo `jm-dev00t/iwap`를 연결합니다.
 3. Blueprint file로 `render.yaml`을 사용합니다.
 4. 생성될 `iwap-backend`, `iwap-postgres` 리소스를 확인합니다.
-5. 최초 생성 시 `sync: false`로 표시된 secret 값은 비워두거나 실제 값을 입력합니다.
-6. 배포 후 backend URL을 확인합니다.
+5. `IWAP_DEMO_JWT_SECRET`은 Blueprint에서 자동 생성되며, 필요하면 Render 환경변수에서 직접 교체합니다.
+6. `IWAP_WEB_ALLOWED_ORIGIN_PATTERNS`는 최초 배포 시 Vercel preview를 허용하고, 운영 도메인 확정 후 좁힙니다.
+7. 배포 후 backend URL을 확인합니다.
 
 예상 backend URL:
 
@@ -93,7 +94,7 @@ https://iwap.vercel.app
 
 ## CORS 설정
 
-Vercel 배포 URL이 확정되면 Render backend의 `IWAP_ALLOWED_ORIGIN_PATTERNS`를 실제 도메인에 맞춰 좁히는 것을 권장합니다.
+Vercel 배포 URL이 확정되면 Render backend의 `IWAP_WEB_ALLOWED_ORIGIN_PATTERNS`를 실제 도메인에 맞춰 좁히는 것을 권장합니다.
 
 초기 배포용:
 
@@ -123,6 +124,21 @@ $manager = Invoke-RestMethod "$api/api/auth/demo-login" `
 
 $headers = @{ Authorization = "Bearer $($manager.accessToken)" }
 Invoke-RestMethod "$api/api/tools" -Headers $headers
+
+$monthly = Invoke-RestMethod "$api/api/workflows/runs" `
+  -Method Post `
+  -Headers $headers `
+  -ContentType "application/json" `
+  -Body '{"command":"이번 달 매출 보고서를 만들고 Slack 채널과 이메일로 공유해줘","scenarioKey":"monthly-sales-report","requestedBy":"manager@demo-company.com"}'
+
+$inventory = Invoke-RestMethod "$api/api/workflows/runs" `
+  -Method Post `
+  -Headers $headers `
+  -ContentType "application/json" `
+  -Body '{"command":"재고 부족 제품 리스트를 뽑아서 구매팀 카카오워크로 보내줘","scenarioKey":"low-inventory","requestedBy":"operator@demo-company.com"}'
+
+$monthly.id
+$inventory.id
 ```
 
 Frontend:
@@ -131,7 +147,13 @@ Frontend:
 https://<your-vercel-project>.vercel.app
 ```
 
-Command Center에서 `Run workflow`를 누른 뒤 `Backend API`와 `Live events`가 표시되면 API와 WebSocket 연결이 모두 동작하는 상태입니다.
+프론트엔드 확인:
+
+- 데모 로그인이 완료되어 워크플로 생성 요청에 Bearer token이 붙는지 확인합니다.
+- 첫 화면의 `워크플로 실행` 버튼으로 월간 매출 보고서와 재고 부족 알림 시나리오를 실행합니다.
+- `승인함` 화면에서 승인/반려 버튼을 눌러 상태가 바뀌는지 확인합니다.
+- `워크플로 대시보드`에서 이벤트 수, 도구 호출 수, 감사 로그 수가 표시되는지 확인합니다.
+- 브라우저 개발자 도구 Network에서 `wss://<render-backend-url>/ws/workflows` 연결과 타임라인 이벤트 수신을 확인합니다.
 
 ## 운영 고려사항
 
