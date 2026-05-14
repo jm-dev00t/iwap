@@ -48,21 +48,26 @@ export function CommandCenter() {
       </p>
 
       <div className="mt-8 rounded-lg border border-hairline bg-canvas p-3">
-        <textarea
-          className="h-28 w-full resize-none bg-transparent p-3 text-base leading-7 text-ink outline-none"
-          value={command}
-          onChange={(event) => setCommand(event.target.value)}
-          aria-label="워크플로 명령"
-        />
+        <label className="block">
+          <span className="px-3 text-xs font-medium uppercase tracking-[0.14em] text-primary">자연어 업무 명령</span>
+          <textarea
+            className="mt-2 h-28 w-full resize-none bg-transparent p-3 text-base leading-7 text-ink outline-none"
+            value={command}
+            onChange={(event) => setCommand(event.target.value)}
+            aria-label="워크플로 명령"
+            placeholder="예: 이번 달 매출 보고서 만들어서 슬랙 채널과 이메일로 보내줘"
+          />
+        </label>
         <div className="grid gap-3 border-t border-hairline px-3 pt-3 md:grid-cols-[1fr_auto] md:items-center">
           <label className="min-w-0 text-sm text-muted">
-            <span className="sr-only">요청자 이메일</span>
+            <span className="mb-1 block text-xs font-medium text-muted">요청자 이메일</span>
             <input
               className="h-10 w-full rounded-md border border-hairline bg-surface-plain px-3 text-sm text-ink outline-none focus:border-primary"
               type="email"
               value={requestedBy}
               onChange={(event) => setRequestedBy(event.target.value)}
               aria-label="요청자 이메일"
+              placeholder="manager@demo-company.com"
             />
           </label>
           <button
