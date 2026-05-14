@@ -2,6 +2,7 @@ package com.iwap.application.workflow;
 
 import com.iwap.domain.agent.AgentType;
 import com.iwap.domain.report.ReportFormat;
+import com.iwap.domain.tool.ToolCallStatus;
 import com.iwap.domain.workflow.WorkflowRun;
 import com.iwap.domain.workflow.WorkflowStatus;
 import org.junit.jupiter.api.Test;
@@ -64,6 +65,29 @@ class WorkflowOrchestratorTest {
         assertThatThrownBy(() -> orchestrator.decideApproval(approvalId, false, "manager@demo-company.com"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("already resolved");
+    }
+
+    @Test
+    void approvingLowInventoryCompletesPendingNotificationTool() {
+        WorkflowOrchestrator orchestrator = new WorkflowOrchestrator();
+        WorkflowRun run = orchestrator.start(
+                "Find low inventory and notify the purchase team.",
+                "low-inventory",
+                "operator@demo-company.com"
+        );
+        String approvalId = run.approvals().getFirst().id();
+
+        WorkflowRun approved = orchestrator.decideApproval(approvalId, true, "manager@demo-company.com");
+
+        assertThat(approved.status()).isEqualTo(WorkflowStatus.COMPLETED);
+        assertThat(approved.approvals().getFirst().status().name()).isEqualTo("APPROVED");
+        assertThat(approved.toolCalls())
+                .filteredOn(toolCall -> toolCall.toolName().equals("kakaowork"))
+                .singleElement()
+                .satisfies(toolCall -> {
+                    assertThat(toolCall.status()).isEqualTo(ToolCallStatus.COMPLETED);
+                    assertThat(toolCall.completedAt()).isNotNull();
+                });
     }
 
     @Test

@@ -3,9 +3,12 @@ package com.iwap.application.workflow;
 import com.iwap.domain.approval.ApprovalRequest;
 import com.iwap.domain.approval.ApprovalStatus;
 import com.iwap.domain.audit.AuditLogEntry;
+import com.iwap.domain.tool.ToolCall;
+import com.iwap.domain.tool.ToolCallStatus;
 import com.iwap.domain.workflow.WorkflowRun;
 import com.iwap.domain.workflow.WorkflowStatus;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +49,22 @@ public final class WorkflowApprovalDecision {
                 "Human approval decision recorded for " + approvalId + "."
         ));
 
+        OffsetDateTime completedAt = OffsetDateTime.now();
+        List<ToolCall> toolCalls = run.toolCalls().stream()
+                .map(toolCall -> {
+                    if (toolCall.status() != ToolCallStatus.PENDING) {
+                        return toolCall;
+                    }
+                    return new ToolCall(
+                            toolCall.toolName(),
+                            toolCall.purpose(),
+                            toolCall.arguments(),
+                            approved ? ToolCallStatus.COMPLETED : ToolCallStatus.SKIPPED,
+                            approved ? completedAt : null
+                    );
+                })
+                .toList();
+
         return new WorkflowRun(
                 run.id(),
                 run.title(),
@@ -53,7 +72,7 @@ public final class WorkflowApprovalDecision {
                 run.requestedBy(),
                 nextWorkflowStatus,
                 run.events(),
-                run.toolCalls(),
+                toolCalls,
                 approvals,
                 run.artifacts(),
                 List.copyOf(auditTrail)
