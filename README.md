@@ -4,6 +4,13 @@ IWAP(Intelligent Workflow Automation Platform)는 자연어 업무 요청을 다
 
 > 이력서 요약: Spring Boot, Spring AI, Next.js, PostgreSQL, PGVector, WebSocket 진행 스트리밍, Tool Calling, Human-in-the-loop 승인, 감사 로그를 포함한 하이브리드 SaaS/SI형 AI 자동화 플랫폼을 구축했습니다.
 
+## 데모 영상
+
+[![IWAP 데모 영상](docs/assets/demo/iwap-demo-thumb.png)](docs/assets/demo/iwap-demo.mp4)
+
+- 53초 실제 로컬 앱 녹화: 자연어 명령 실행, 승인 필요 시나리오, 승인함 처리, 실행 이력과 보고서 화면을 보여줍니다.
+- MP4 파일: [docs/assets/demo/iwap-demo.mp4](docs/assets/demo/iwap-demo.mp4)
+
 ## 왜 필요한가
 
 중소기업과 현업 팀은 단순 챗봇보다 “반복 업무가 실제로 끝나는 자동화”를 원합니다. IWAP은 자연어 명령을 받아 기존 업무 도구와 연결될 수 있는 워크플로 구조를 보여줍니다.
