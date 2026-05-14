@@ -44,7 +44,9 @@ const monthlySalesData = [
   { channel: "Partner", current: 27.6, previous: 25.1, target: 26, orders: 19, margin: 27, share: 19.2, achievement: 106.2 },
 ];
 
-const chartColors = ["#2f8795", "#4db0c1", "#b7d5de"];
+const reportChartColors = ["var(--primary)", "var(--accent-teal)", "var(--accent-amber)"];
+const reportGridColor = "var(--hairline)";
+const reportMutedColor = "var(--muted)";
 
 const kpis = [
   { label: "총매출", value: "143.3M원", delta: "+9.3%" },
@@ -199,8 +201,8 @@ function MarkdownPreview({ content }: { content: string }) {
 
 function MonthlySalesDocument() {
   return (
-    <section className="rounded-xl border border-hairline bg-white p-5 shadow-soft">
-      <div className="rounded-md bg-[#43a9bd] px-5 py-4 text-center text-xl font-bold text-white">2026년 5월 채널별 매출현황</div>
+    <section className="rounded-xl border border-hairline bg-surface-plain p-5 shadow-soft">
+      <div className="rounded-md bg-surface-dark px-5 py-4 text-center text-xl font-bold text-canvas">2026년 5월 채널별 매출현황</div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
         <div>
@@ -210,27 +212,27 @@ function MonthlySalesDocument() {
               <PieChart>
                 <Pie data={monthlySalesData} dataKey="share" innerRadius={58} outerRadius={105} paddingAngle={1}>
                   {monthlySalesData.map((entry, index) => (
-                    <Cell fill={chartColors[index % chartColors.length]} key={entry.channel} />
+                    <Cell fill={reportChartColors[index % reportChartColors.length]} key={entry.channel} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number) => [`${value}%`, "구성비"]} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid gap-2 rounded-md bg-[#43a9bd] p-4 text-sm text-white">
-            <div className="flex justify-between border-b border-white/30 pb-2">
+          <div className="grid gap-2 rounded-md bg-surface-dark p-4 text-sm text-canvas">
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
               <span>전월 총 매출</span>
               <strong>131,000,000</strong>
             </div>
-            <div className="flex justify-between border-b border-white/30 pb-2">
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
               <span>이번달 총 매출</span>
               <strong>143,300,000</strong>
             </div>
-            <div className="flex justify-between border-b border-white/30 pb-2">
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
               <span>전월대비 증가액</span>
               <strong>12,300,000</strong>
             </div>
-            <div className="flex justify-between border-b border-white/30 pb-2">
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
               <span>목표대비 달성률(%)</span>
               <strong>106.9%</strong>
             </div>
@@ -246,21 +248,21 @@ function MonthlySalesDocument() {
           <div className="mt-4 h-64">
             <ResponsiveContainer height="100%" width="100%">
               <BarChart data={monthlySalesData} margin={{ left: -8, right: 8, top: 18 }}>
-                <CartesianGrid stroke="#e8edf0" strokeDasharray="3 3" />
-                <XAxis dataKey="channel" tick={{ fill: "#6f6a61", fontSize: 12 }} />
-                <YAxis tick={{ fill: "#6f6a61", fontSize: 12 }} />
+                <CartesianGrid stroke={reportGridColor} strokeDasharray="3 3" />
+                <XAxis dataKey="channel" tick={{ fill: reportMutedColor, fontSize: 12 }} />
+                <YAxis tick={{ fill: reportMutedColor, fontSize: 12 }} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, borderColor: "#d8d0c4" }}
+                  contentStyle={{ background: "var(--surface-plain)", borderRadius: 8, borderColor: "var(--hairline)", color: "var(--ink)" }}
                   formatter={(value: number, name) => [`${value}M원`, name === "target" ? "목표금액" : "매출실적"]}
                 />
-                <Bar dataKey="target" fill="#c7c7c7" name="목표금액" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="current" fill="#43a9bd" name="매출실적" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="target" fill="var(--surface-card)" name="목표금액" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="current" fill="var(--primary)" name="매출실적" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-5 overflow-x-auto rounded-md border border-[#9ed3dc]">
+          <div className="mt-5 overflow-x-auto rounded-md border border-hairline">
             <table className="min-w-full text-sm">
-              <thead className="bg-[#43a9bd] text-white">
+              <thead className="bg-surface-dark text-canvas">
                 <tr>
                   <th className="px-3 py-2 text-left">채널</th>
                   <th className="px-3 py-2 text-right">목표금액</th>
@@ -270,7 +272,7 @@ function MonthlySalesDocument() {
                   <th className="px-3 py-2 text-right">달성률(%)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#cce8ed]">
+              <tbody className="divide-y divide-hairline">
                 {monthlySalesData.map((row) => (
                   <tr key={row.channel}>
                     <td className="px-3 py-2 font-medium text-ink">{row.channel}</td>
@@ -278,7 +280,7 @@ function MonthlySalesDocument() {
                     <td className="px-3 py-2 text-right text-body">{(row.current * 1_000_000).toLocaleString("ko-KR")}</td>
                     <td className="px-3 py-2 text-right text-body">{((row.current - row.target) * 1_000_000).toLocaleString("ko-KR")}</td>
                     <td className="px-3 py-2 text-right text-body">{row.share}%</td>
-                    <td className="px-3 py-2 text-right font-semibold text-[#2f8795]">{row.achievement}%</td>
+                    <td className="px-3 py-2 text-right font-semibold text-primary">{row.achievement}%</td>
                   </tr>
                 ))}
               </tbody>
