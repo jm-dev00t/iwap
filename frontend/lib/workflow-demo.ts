@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock3, FileText, Mail, MessageSquare, ShieldCheck } from "lucide-react";
 
-export type AgentName = "Planner" | "Executor" | "Validator" | "Reporter" | "Notifier";
+export type AgentName = string;
 
 export type TimelineEvent = {
   agent: AgentName;
@@ -20,7 +20,7 @@ export const demoScenarios = [
   {
     key: "customer-onboarding",
     label: "신규 고객 온보딩",
-    command: "신규 고객 등록 후 환영 이메일 보내고, CRM에 기록하고, 담당자에게 알림",
+    command: "신규 고객 등록 후 환영 이메일 보내고, 고객 관리 시스템에 기록하고, 담당자에게 알림",
     icon: Mail,
   },
   {
@@ -30,7 +30,7 @@ export const demoScenarios = [
     icon: ShieldCheck,
   },
   {
-    key: "weekly-sales",
+    key: "weekly-sales-report",
     label: "주간 영업 리포트",
     command: "주간 영업 실적 분석해서 PDF 리포트 생성 후 공유",
     icon: MessageSquare,
@@ -39,38 +39,38 @@ export const demoScenarios = [
 
 export const timelineEvents: TimelineEvent[] = [
   {
-    agent: "Planner",
+    agent: "계획 에이전트",
     status: "completed",
-    title: "업무 의도를 구조화",
-    detail: "월간 매출, 리포트 생성, Slack/Email 발송 목표를 WorkflowPlan으로 변환",
+    title: "업무 의도 구조화",
+    detail: "월간 매출, 리포트 생성, 슬랙/이메일 발송 목표를 실행 계획으로 변환했습니다.",
     time: "09:41:08",
   },
   {
-    agent: "Executor",
+    agent: "실행 에이전트",
     status: "running",
-    title: "Tool 호출 실행",
-    detail: "sales-data, report-generator, slack, email 어댑터를 순차 실행 중",
+    title: "도구 호출 실행",
+    detail: "매출 데이터, 보고서 생성기, 슬랙, 이메일 어댑터를 순차 실행 중입니다.",
     time: "09:41:11",
   },
   {
-    agent: "Validator",
+    agent: "검증 에이전트",
     status: "waiting",
     title: "결과 검증 대기",
-    detail: "필수 지표, 수신 대상, 생성 산출물 누락 여부를 확인 예정",
+    detail: "필수 지표, 수신 대상, 생성 산출물 누락 여부를 확인할 예정입니다.",
     time: "대기",
   },
   {
-    agent: "Reporter",
+    agent: "보고 에이전트",
     status: "waiting",
     title: "경영진 요약 생성",
-    detail: "매출 증감, 채널별 기여도, 다음 액션을 PDF/Markdown으로 정리",
+    detail: "매출 증감, 채널별 기여도, 다음 액션을 리포트로 정리합니다.",
     time: "대기",
   },
   {
-    agent: "Notifier",
+    agent: "알림 에이전트",
     status: "waiting",
     title: "완료 알림",
-    detail: "요청자와 작업 이력에 최종 결과를 남김",
+    detail: "요청자에게 작업 이력과 최종 결과를 공유합니다.",
     time: "대기",
   },
 ];

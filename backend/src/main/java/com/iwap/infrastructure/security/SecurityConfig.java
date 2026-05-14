@@ -1,54 +1,73 @@
 package com.iwap.infrastructure.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
 
+    private final List<String> allowedOrigins;
+    private final DemoJwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(
+            @Value("${iwap.security.allowed-origins}") String allowedOrigins,
+            DemoJwtAuthenticationFilter jwtAuthenticationFilter
+    ) {
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, DemoJwtAuthenticationFilter jwtFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {
-                })
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, exception) -> response.sendError(401, "Authentication required"))
-                        .accessDeniedHandler((request, response, exception) -> response.sendError(403, "Manager role required"))
-                )
+                .cors(Customizer.withDefaults())
+                .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(
+                        (request, response, exception) -> response.sendError(401, "Authentication is required")
+                ))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/demo-login",
                                 "/api/health",
-                                "/actuator/**",
+                                "/actuator/health",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/ws/**"
                         ).permitAll()
-                        .requestMatchers("/api/approvals/*/approve", "/api/approvals/*/reject").hasRole("MANAGER")
-                        .requestMatchers("/api/demo-scenarios/seed").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/workflows/runs").hasAnyRole("MANAGER", "OPERATOR")
-                        .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/demo-scenarios").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
-    UserDetailsService demoUserDetailsService() {
-        return username -> {
-            throw new UsernameNotFoundException("IWAP demo uses JWT bearer tokens only");
-        };
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/ws/**", configuration);
+        return source;
     }
 }

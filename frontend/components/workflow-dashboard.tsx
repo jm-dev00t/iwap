@@ -1,7 +1,7 @@
 const metrics = [
   { label: "오늘 실행", value: "18", note: "4개 시나리오 데모 포함" },
   { label: "승인 대기", value: "3", note: "구매/외부 발송 검토" },
-  { label: "Tool Calls", value: "74", note: "Mock + Real provider ready" },
+  { label: "도구 호출", value: "74", note: "모의/실제 연동 전환 준비" },
 ];
 
 export function WorkflowDashboard() {

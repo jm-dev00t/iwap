@@ -1,88 +1,50 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Play } from "lucide-react";
-import { demoWorkflowRun, startWorkflow, type WorkflowEventPayload, type WorkflowRun } from "@/lib/api";
-import { subscribeWorkflowEvents } from "@/lib/workflow-events";
+import { ArrowUpRight, Loader2, Play } from "lucide-react";
+import { useState } from "react";
+import { startWorkflow as requestStartWorkflow } from "@/lib/api";
+import { statusLabel, workflowTitleLabel } from "@/lib/display-labels";
 import { demoScenarios } from "@/lib/workflow-demo";
 
-function appendWorkflowEvent(run: WorkflowRun, event: WorkflowEventPayload): WorkflowRun {
-  const alreadyRecorded = run.events.some(
-    (item) =>
-      item.agentType === event.agentType &&
-      item.eventType === event.eventType &&
-      item.message === event.message &&
-      item.occurredAt === event.occurredAt,
-  );
-
-  if (alreadyRecorded) {
-    return run;
-  }
-
-  return {
-    ...run,
-    events: [...run.events, event],
-    auditTrail: [
-      ...run.auditTrail,
-      {
-        actor: event.agentType,
-        action: event.eventType,
-        summary: event.message,
-      },
-    ],
-  };
-}
+type WorkflowRunResponse = {
+  id: string;
+  title: string;
+  status: string;
+  events: Array<{ message: string }>;
+  toolCalls: Array<{ toolName: string }>;
+  approvals: Array<{ reason: string }>;
+};
 
 export function CommandCenter() {
-  const [command, setCommand] = useState("이번 달 매출 보고서 만들어서 슬랙 채널과 이메일로 보내줘");
-  const [run, setRun] = useState<WorkflowRun | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [source, setSource] = useState<"api" | "fallback" | null>(null);
-  const [liveEvents, setLiveEvents] = useState(0);
-  const eventBuffer = useRef(new Map<string, WorkflowEventPayload[]>());
+  const [command, setCommand] = useState(demoScenarios[0].command);
+  const [requestedBy, setRequestedBy] = useState("manager@demo-company.com");
+  const [selectedScenario, setSelectedScenario] = useState(demoScenarios[0].key);
+  const [run, setRun] = useState<WorkflowRunResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    return subscribeWorkflowEvents((event) => {
-      setRun((current) => {
-        if (!current || current.id !== event.runId) {
-          eventBuffer.current.set(event.runId, [...(eventBuffer.current.get(event.runId) ?? []), event]);
-          return current;
-        }
+  async function startWorkflow() {
+    setIsSubmitting(true);
+    setError(null);
 
-        setLiveEvents((count) => count + 1);
-        return appendWorkflowEvent(current, event);
-      });
-    });
-  }, []);
-
-  async function runWorkflow() {
-    setIsRunning(true);
     try {
-      const result = await startWorkflow(command);
-      const bufferedEvents = eventBuffer.current.get(result.id) ?? [];
-      eventBuffer.current.delete(result.id);
-      setRun(bufferedEvents.reduce(appendWorkflowEvent, result));
-      setSource("api");
-      setLiveEvents(bufferedEvents.length);
-    } catch {
-      // The portfolio UI remains demoable even when the backend is not running locally.
-      setRun(demoWorkflowRun(command));
-      setSource("fallback");
-      setLiveEvents(0);
+      setRun(await requestStartWorkflow(command, { scenarioKey: selectedScenario, requestedBy }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "워크플로 요청에 실패했습니다");
     } finally {
-      setIsRunning(false);
+      setIsSubmitting(false);
     }
   }
 
   return (
     <section className="rounded-xl border border-hairline bg-surface-plain p-6">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">Portfolio Demo</p>
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">포트폴리오 데모</p>
       <h1 className="display-title mt-3 max-w-2xl text-5xl leading-tight md:text-6xl">
         자연어 명령을 실제 업무 자동화 흐름으로 바꿉니다
       </h1>
       <p className="mt-5 max-w-2xl text-base leading-7 text-body">
-        IWAP은 Planner, Executor, Validator, Reporter, Notifier Agent가 협업해 보고서 생성,
-        CRM 기록, 알림 발송, 승인 요청, 감사 로그까지 처리하는 하이브리드형 B2B AI 자동화 플랫폼입니다.
+        IWAP는 계획, 실행, 검증, 보고, 알림 에이전트가 작업 보고서 생성, 고객 관리 기록,
+        알림 발송, 승인 요청, 감사 로그까지 처리하는 하이브리드형 기업 AI 자동화 플랫폼입니다.
       </p>
 
       <div className="mt-8 rounded-lg border border-hairline bg-canvas p-3">
@@ -90,43 +52,35 @@ export function CommandCenter() {
           className="h-28 w-full resize-none bg-transparent p-3 text-base leading-7 text-ink outline-none"
           value={command}
           onChange={(event) => setCommand(event.target.value)}
-          aria-label="Workflow command"
+          aria-label="워크플로 명령"
         />
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline px-3 pt-3">
-          <p className="text-sm text-muted">Mock AI mode · 실제 연동 키가 있으면 Provider 전환</p>
+        <div className="grid gap-3 border-t border-hairline px-3 pt-3 md:grid-cols-[1fr_auto] md:items-center">
+          <label className="min-w-0 text-sm text-muted">
+            <span className="sr-only">요청자 이메일</span>
+            <input
+              className="h-10 w-full rounded-md border border-hairline bg-surface-plain px-3 text-sm text-ink outline-none focus:border-primary"
+              type="email"
+              value={requestedBy}
+              onChange={(event) => setRequestedBy(event.target.value)}
+              aria-label="요청자 이메일"
+            />
+          </label>
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary-active disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isRunning}
-            onClick={runWorkflow}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-white hover:bg-primary-active disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting || command.trim().length === 0 || requestedBy.trim().length === 0}
+            onClick={startWorkflow}
+            type="button"
           >
-            <Play className="h-4 w-4" />
-            {isRunning ? "Running..." : "Run workflow"}
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            워크플로 실행
           </button>
         </div>
-      </div>
-
-      {run ? (
-        <div className="mt-5 rounded-lg bg-surface-card p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-ink">{run.title}</p>
-            <span className="rounded-full bg-canvas px-3 py-1 text-xs font-medium text-body">
-              {source === "api" ? "Backend API" : "Demo fallback"} · {run.status}
-            </span>
-          </div>
-          <p className="mt-2 text-sm leading-6 text-body">{run.events.at(-1)?.message}</p>
-          <p className="mt-2 text-xs text-muted">
-            Tool calls {run.toolCalls.length} · Approvals {run.approvals.length} · Audit events {run.auditTrail.length}
-          </p>
-          {source === "api" ? <p className="mt-1 text-xs text-primary">Live events {liveEvents}</p> : null}
-          {run.artifacts[0] ? (
-            <div className="mt-4 rounded-md bg-canvas p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Generated Report</p>
-              <p className="mt-1 text-sm font-semibold text-ink">{run.artifacts[0].title}</p>
-              <p className="mt-1 text-sm leading-6 text-body">{run.artifacts[0].summary}</p>
-            </div>
-          ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3">
+          <p className="text-sm text-muted">모의 AI 모드 · 실제 연동 키가 있으면 운영 모드로 전환 가능</p>
+          {run ? <p className="text-sm font-medium text-ink">{workflowTitleLabel(run.title)} · {statusLabel(run.status)}</p> : null}
+          {error ? <p className="text-sm font-medium text-primary-active">{error}</p> : null}
         </div>
-      ) : null}
+      </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-2">
         {demoScenarios.map((scenario) => {
@@ -135,7 +89,13 @@ export function CommandCenter() {
             <button
               className="group flex min-h-24 items-start gap-3 rounded-lg bg-surface-card p-4 text-left"
               key={scenario.key}
-              onClick={() => setCommand(scenario.command)}
+              onClick={() => {
+                setCommand(scenario.command);
+                setSelectedScenario(scenario.key);
+                setRun(null);
+                setError(null);
+              }}
+              type="button"
             >
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-canvas text-primary">
                 <Icon className="h-4 w-4" />
@@ -151,6 +111,23 @@ export function CommandCenter() {
           );
         })}
       </div>
+
+      {run ? (
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg bg-surface-card p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">실행 ID</p>
+            <p className="mt-2 break-all font-mono text-sm text-ink">{run.id}</p>
+          </div>
+          <div className="rounded-lg bg-surface-card p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">이벤트</p>
+            <p className="mt-2 text-2xl font-semibold text-ink">{run.events.length}</p>
+          </div>
+          <div className="rounded-lg bg-surface-card p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">도구 호출</p>
+            <p className="mt-2 text-2xl font-semibold text-ink">{run.toolCalls.length}</p>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

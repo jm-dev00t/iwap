@@ -141,11 +141,11 @@ docker compose down -v
 포트 충돌 시 `.env`에서 다음 값을 바꿉니다.
 
 ```text
-IWAP_BACKEND_PORT=8081
-IWAP_FRONTEND_PORT=3001
-IWAP_POSTGRES_PORT=5433
-NEXT_PUBLIC_IWAP_API_BASE_URL=http://localhost:8081
-NEXT_PUBLIC_IWAP_WS_URL=ws://localhost:8081/ws/workflows
+IWAP_BACKEND_PORT=8080
+IWAP_FRONTEND_PORT=3000
+IWAP_POSTGRES_PORT=5432
+NEXT_PUBLIC_IWAP_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_IWAP_WS_URL=http://localhost:8080/ws/workflows
 ```
 
 ## 현재 상태

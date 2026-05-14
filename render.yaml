@@ -31,7 +31,7 @@ services:
         value: mock
       - key: IWAP_INTEGRATION_MODE
         value: mock
-      - key: IWAP_ALLOWED_ORIGIN_PATTERNS
+      - key: IWAP_WEB_ALLOWED_ORIGIN_PATTERNS
         value: https://*.vercel.app,https://*.onrender.com
       - key: IWAP_DEMO_JWT_SECRET
         generateValue: true

@@ -1,14 +1,5 @@
-.git
-.gitignore
-.idea
-.vscode
-
 target
-*.class
-*.log
-
 .env
 .env.*
-
-README.md
-docs
+!.env.example
+*.log

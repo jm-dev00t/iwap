@@ -1,32 +1,16 @@
-"use client";
-
-import { BarChart3, CheckSquare, History, LayoutDashboard, MessageSquareText, Settings, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
-import { currentDemoSession, demoLogin, type DemoAuthSession } from "@/lib/api";
+import { BarChart3, CheckSquare, History, LayoutDashboard, MessageSquareText, Settings } from "lucide-react";
+import Link from "next/link";
 
 const navItems = [
-  { label: "Command", href: "/", icon: MessageSquareText },
-  { label: "Workflows", href: "/workflows", icon: LayoutDashboard },
-  { label: "Approvals", href: "/approvals", icon: CheckSquare },
-  { label: "History", href: "/history", icon: History },
-  { label: "Reports", href: "/reports", icon: BarChart3 },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "명령 센터", href: "/", icon: MessageSquareText },
+  { label: "워크플로", href: "/workflows", icon: LayoutDashboard },
+  { label: "승인함", href: "/approvals", icon: CheckSquare },
+  { label: "이력", href: "/history", icon: History },
+  { label: "보고서", href: "/reports", icon: BarChart3 },
+  { label: "설정", href: "/settings", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<DemoAuthSession | null>(null);
-
-  useEffect(() => {
-    const existing = currentDemoSession();
-    if (existing) {
-      setSession(existing);
-      return;
-    }
-    demoLogin("MANAGER")
-      .then(setSession)
-      .catch(() => setSession(null));
-  }, []);
-
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-hairline bg-surface-soft px-5 py-6 lg:block">
@@ -34,34 +18,48 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="grid h-9 w-9 place-items-center rounded-lg bg-surface-dark text-canvas">IW</div>
           <div>
             <p className="text-sm font-semibold">IWAP</p>
-            <p className="text-xs text-muted">AI Workflow Console</p>
+            <p className="text-xs text-muted">AI 업무 자동화 콘솔</p>
           </div>
         </div>
         <nav className="mt-10 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <a
+              <Link
                 className="flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-body hover:bg-surface-card"
                 href={item.href}
                 key={item.label}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}
-              </a>
+              </Link>
             );
           })}
         </nav>
-        <div className="absolute bottom-6 left-5 right-5 rounded-lg border border-hairline bg-surface-card p-3">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            {session?.displayName ?? "Demo Login"}
-          </div>
-          <p className="mt-1 text-xs text-muted">
-            {session ? `${session.email} · ${session.roles.join(", ")}` : "Preparing manager token"}
-          </p>
-        </div>
       </aside>
+      <div className="border-b border-hairline bg-surface-soft px-4 py-3 lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <Link className="flex items-center gap-2" href="/">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-surface-dark text-sm text-canvas">IW</span>
+            <span className="text-sm font-semibold">IWAP</span>
+          </Link>
+          <nav className="flex max-w-[72vw] gap-1 overflow-x-auto">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  aria-label={item.label}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-body hover:bg-surface-card"
+                  href={item.href}
+                  key={item.label}
+                >
+                  <Icon className="h-4 w-4" />
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
       <main className="lg:pl-64">{children}</main>
     </div>
   );

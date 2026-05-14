@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeading } from "@/components/page-heading";
 import { approveApproval, demoApprovals, listApprovals, rejectApproval, type ApprovalItem } from "@/lib/api";
+import { agentLabel, statusLabel, workflowTitleLabel } from "@/lib/display-labels";
 
 export default function ApprovalsPage() {
   const queryClient = useQueryClient();
@@ -39,23 +40,23 @@ export default function ApprovalsPage() {
     <AppShell>
       <div className="mx-auto max-w-[1200px] px-5 py-8 md:px-8">
         <PageHeading
-          eyebrow="Human In The Loop"
+          eyebrow="사람 승인 단계"
           title="위험한 자동화는 사람이 승인합니다"
           description="외부 발송, 구매팀 알림, 대량 고객 안내처럼 실제 업무 영향이 큰 단계는 승인함에서 통제합니다."
         />
         <div className="mt-4 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-          {isLoading ? "승인 목록 조회 중..." : isError ? "Backend 미연결: 데모 승인 표시 중" : "Backend API 연결됨"}
+          {isLoading ? "승인 목록 조회 중..." : isError ? "백엔드 미연결: 데모 승인 표시 중" : "백엔드 연결됨"}
         </div>
         <div className="mt-8 grid gap-4">
           {approvals.map((approval) => (
             <section className="rounded-xl bg-surface-dark p-6 text-canvas" key={approval.id}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-amber">{approval.status}</p>
-                  <h2 className="display-title mt-2 text-3xl">Low Inventory Purchasing Alert</h2>
+                  <p className="text-sm font-semibold text-amber">{statusLabel(approval.status)}</p>
+                  <h2 className="display-title mt-2 text-3xl">{workflowTitleLabel("Low Inventory Purchasing Alert")}</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[#a09d96]">{approval.reason}</p>
                   <p className="mt-3 font-mono text-xs text-[#a09d96]">
-                    {approval.id} · requested by {approval.requestedByAgent}
+                    {approval.id} · 요청 에이전트 {agentLabel(approval.requestedByAgent)}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -64,14 +65,14 @@ export default function ApprovalsPage() {
                     disabled={approval.status !== "PENDING" || decide.isPending}
                     onClick={() => decide.mutate({ approval, decision: "REJECTED" })}
                   >
-                    Reject
+                    반려
                   </button>
                   <button
                     className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-white disabled:opacity-50"
                     disabled={approval.status !== "PENDING" || decide.isPending}
                     onClick={() => decide.mutate({ approval, decision: "APPROVED" })}
                   >
-                    Approve
+                    승인
                   </button>
                 </div>
               </div>

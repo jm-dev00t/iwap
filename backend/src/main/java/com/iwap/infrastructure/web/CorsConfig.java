@@ -17,7 +17,7 @@ public class CorsConfig {
 
     private final String allowedOriginPatterns;
 
-    CorsConfig(@Value("${iwap.web.allowed-origin-patterns}") String allowedOriginPatterns) {
+    CorsConfig(@Value("${iwap.web.allowed-origin-patterns:${IWAP_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}}") String allowedOriginPatterns) {
         this.allowedOriginPatterns = allowedOriginPatterns;
     }
 

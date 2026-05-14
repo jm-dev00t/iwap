@@ -5,7 +5,6 @@ import com.iwap.domain.workflow.WorkflowRun;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,16 +26,11 @@ public class WorkflowRunController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public WorkflowRun start(@Valid @RequestBody StartWorkflowRunRequest request) {
-        return orchestrator.start(request.command(), request.requestedBy());
+        return orchestrator.start(request.command(), request.scenarioKey(), request.requestedBy());
     }
 
     @GetMapping
     public List<WorkflowRun> history() {
         return orchestrator.history();
-    }
-
-    @GetMapping("/{runId}")
-    public WorkflowRun getRun(@PathVariable String runId) {
-        return orchestrator.getRun(runId);
     }
 }

@@ -31,7 +31,7 @@ public class DemoScenarioController {
                 new DemoScenarioResponse(
                         "customer-onboarding",
                         "New Customer Onboarding",
-                        "신규 고객 등록 후 환영 이메일 보내고, CRM에 기록하고, 담당자에게 알림",
+                        "신규 고객 등록 후 환영 이메일 보내고, 고객 관리 시스템에 기록하고, 담당자에게 알림",
                         "영업 전환 이후 고객 등록, 환영 메일, 담당자 알림 누락을 방지합니다."
                 ),
                 new DemoScenarioResponse(
@@ -52,7 +52,7 @@ public class DemoScenarioController {
     @PostMapping("/seed")
     public List<WorkflowRun> seedDemoRuns() {
         return scenarios().stream()
-                .map(scenario -> orchestrator.start(scenario.command(), "manager@demo-company.com"))
+                .map(scenario -> orchestrator.start(scenario.command(), scenario.key(), "manager@demo-company.com"))
                 .toList();
     }
 }

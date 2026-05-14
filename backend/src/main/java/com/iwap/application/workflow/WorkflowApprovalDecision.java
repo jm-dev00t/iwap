@@ -23,6 +23,9 @@ public final class WorkflowApprovalDecision {
                     if (!approval.id().equals(approvalId)) {
                         return approval;
                     }
+                    if (approval.status() != ApprovalStatus.PENDING) {
+                        throw new IllegalStateException("Approval request is already resolved: " + approvalId);
+                    }
                     return new ApprovalRequest(
                             approval.id(),
                             approval.runId(),

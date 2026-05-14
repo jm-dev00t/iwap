@@ -3,8 +3,8 @@ spring:
     name: iwap-backend
   datasource:
     url: ${IWAP_DATASOURCE_URL:jdbc:postgresql://${IWAP_DATABASE_HOST:localhost}:${IWAP_DATABASE_PORT:5432}/${IWAP_DATABASE_NAME:iwap}}
-    username: ${IWAP_DATASOURCE_USERNAME:${IWAP_DATABASE_USER:iwap}}
-    password: ${IWAP_DATASOURCE_PASSWORD:${IWAP_DATABASE_PASSWORD:iwap}}
+    username: ${IWAP_DATASOURCE_USERNAME:iwap}
+    password: ${IWAP_DATASOURCE_PASSWORD:iwap}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -12,13 +12,19 @@ spring:
   flyway:
     enabled: true
   ai:
+    model:
+      chat: ${IWAP_SPRING_AI_CHAT_MODEL:none}
+      embedding: ${IWAP_SPRING_AI_EMBEDDING_MODEL:none}
+      image: ${IWAP_SPRING_AI_IMAGE_MODEL:none}
+      moderation: ${IWAP_SPRING_AI_MODERATION_MODEL:none}
+      audio:
+        speech: ${IWAP_SPRING_AI_AUDIO_SPEECH_MODEL:none}
+        transcription: ${IWAP_SPRING_AI_AUDIO_TRANSCRIPTION_MODEL:none}
     openai:
-      # Spring AI autoconfiguration may create provider beans even when IWAP runs in mock mode.
-      # A harmless default prevents local demo boot failures; real deployments override it.
-      api-key: ${OPENAI_API_KEY:demo-key-not-used-in-mock-mode}
+      api-key: ${OPENAI_API_KEY:}
 
 server:
-  port: ${IWAP_BACKEND_PORT:${PORT:8080}}
+  port: ${IWAP_BACKEND_PORT:8080}
 
 management:
   endpoints:
@@ -35,8 +41,9 @@ iwap:
     mode: ${IWAP_INTEGRATION_MODE:mock}
   security:
     demo-jwt-secret: ${IWAP_DEMO_JWT_SECRET:change-me-for-real-deployments}
+    allowed-origins: ${IWAP_ALLOWED_ORIGINS:http://localhost:3000}
   web:
-    allowed-origin-patterns: ${IWAP_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
+    allowed-origin-patterns: ${IWAP_WEB_ALLOWED_ORIGIN_PATTERNS:${IWAP_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}}
 
 springdoc:
   swagger-ui:
