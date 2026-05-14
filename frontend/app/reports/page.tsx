@@ -3,7 +3,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { CheckCircle2, Clipboard, Database, Download, Eye, FileText, Mail, MessageSquare, XCircle } from "lucide-react";
+import { Database, Download, Eye, FileText, Mail, MessageSquare } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeading } from "@/components/page-heading";
 import { demoWorkflowRuns, listWorkflowRuns, type WorkflowRun } from "@/lib/api";
@@ -17,12 +17,6 @@ type Report = WorkflowRun["artifacts"][number] & {
   command: string;
   toolCalls: WorkflowRun["toolCalls"];
 };
-
-type CopyStatus = {
-  reportId: string;
-  kind: "success" | "error";
-  message: string;
-} | null;
 
 const REPORTS_PER_PAGE = 4;
 
@@ -210,14 +204,6 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function filenameFor(report: Report) {
-  const base = report.title
-    .toLowerCase()
-    .replace(/[^a-z0-9가-힣]+/gi, "-")
-    .replace(/^-+|-+$/g, "");
-  return `${base || "workflow-report"}.md`;
 }
 
 function MarkdownPreview({ content }: { content: string }) {
@@ -552,7 +538,6 @@ function DeliveryStatus({ report }: { report: Report }) {
 
 export default function ReportsPage() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>(null);
   const [reportPage, setReportPage] = useState(1);
   const { data, isError, isLoading } = useQuery({
     queryKey: ["workflow-reports"],
@@ -574,33 +559,70 @@ export default function ReportsPage() {
   const pagedReports = scenarioReports.slice((currentReportPage - 1) * REPORTS_PER_PAGE, currentReportPage * REPORTS_PER_PAGE);
   const selectedReport = scenarioReports.find((report) => report.id === selectedReportId) ?? null;
 
-  async function copyMarkdown(report: Report) {
-    try {
-      await navigator.clipboard.writeText(report.content);
-      setCopyStatus({
-        reportId: report.id,
-        kind: "success",
-        message: `"${workflowTitleLabel(report.title)}" 마크다운을 클립보드에 복사했습니다.`,
-      });
-    } catch {
-      setCopyStatus({
-        reportId: report.id,
-        kind: "error",
-        message: "브라우저 권한 때문에 복사하지 못했습니다. 미리보기에서 내용을 직접 선택해 주세요.",
-      });
+  function openPrintableReport(report: Report) {
+    const printable = window.open("", "_blank", "noopener,noreferrer,width=980,height=1200");
+    if (!printable) {
+      return;
     }
-  }
 
-  function downloadMarkdown(report: Report) {
-    const blob = new Blob([report.content], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filenameFor(report);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    const escapedContent = report.content
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    printable.document.write(`<!doctype html>
+      <html lang="ko">
+        <head>
+          <meta charset="utf-8" />
+          <title>${workflowTitleLabel(report.title)}</title>
+          <style>
+            @page { size: A4; margin: 18mm; }
+            body {
+              background: #faf9f5;
+              color: #141413;
+              font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+              line-height: 1.65;
+              margin: 0;
+              padding: 28px;
+            }
+            header {
+              border-bottom: 2px solid #181715;
+              margin-bottom: 24px;
+              padding-bottom: 14px;
+            }
+            .kicker {
+              color: #cc785c;
+              font-size: 12px;
+              font-weight: 700;
+              letter-spacing: .12em;
+              text-transform: uppercase;
+            }
+            h1 { font-size: 30px; margin: 8px 0; }
+            .meta { color: #6c6a64; font-size: 13px; }
+            pre {
+              white-space: pre-wrap;
+              word-break: keep-all;
+              background: #fffefa;
+              border: 1px solid #e6dfd8;
+              border-radius: 8px;
+              padding: 18px;
+              font-family: inherit;
+              font-size: 13px;
+            }
+            .notice { color: #6c6a64; font-size: 12px; margin-top: 18px; }
+          </style>
+        </head>
+        <body>
+          <header>
+            <div class="kicker">IWAP Generated Report</div>
+            <h1>${workflowTitleLabel(report.title)}</h1>
+            <div class="meta">${workflowTitleLabel(report.runTitle)} · ${formatDate(report.createdAt)}</div>
+          </header>
+          <pre>${escapedContent}</pre>
+          <p class="notice">브라우저 인쇄 창에서 대상을 PDF로 저장으로 선택하면 PDF 파일로 내려받을 수 있습니다.</p>
+          <script>window.addEventListener("load", () => setTimeout(() => window.print(), 200));</script>
+        </body>
+      </html>`);
+    printable.document.close();
   }
 
   return (
@@ -609,7 +631,7 @@ export default function ReportsPage() {
         <PageHeading
           eyebrow="생성 보고서"
           title="에이전트가 만든 업무 리포트를 검토합니다"
-          description="워크플로 실행 결과에서 생성된 마크다운 보고서를 모아 미리보고, 복사하고, 배포용 파일로 내려받을 수 있습니다."
+          description="워크플로 실행 결과에서 생성된 업무 보고서를 모아 미리보고, PDF로 저장할 수 있습니다."
         />
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -626,17 +648,6 @@ export default function ReportsPage() {
             시나리오별 대표 {scenarioReports.length}건 표시
             {reports.length > scenarioReports.length ? ` · 누적 ${reports.length - scenarioReports.length}건 정리됨` : ""}
           </div>
-          {copyStatus && (
-            <div
-              className={`flex max-w-full items-center gap-2 rounded-full px-4 py-2 text-sm ${
-                copyStatus.kind === "success" ? "bg-success/10 text-success" : "bg-error/10 text-error"
-              }`}
-              role="status"
-            >
-              {copyStatus.kind === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-              <span className="min-w-0 truncate">{copyStatus.message}</span>
-            </div>
-          )}
         </div>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -644,11 +655,16 @@ export default function ReportsPage() {
             <div className="grid gap-4">
               {pagedReports.map((report) => (
                 <article
-                  className={`rounded-xl border p-5 shadow-soft transition ${
-                    selectedReport?.id === report.id ? "border-primary bg-surface-plain" : "border-hairline bg-surface-card"
+                  className={`relative rounded-xl border p-5 shadow-soft transition ${
+                    selectedReport?.id === report.id
+                      ? "border-primary bg-surface-plain ring-2 ring-primary/30"
+                      : "border-hairline bg-surface-card hover:border-primary/60"
                   }`}
                   key={`${report.runId}-${report.id}`}
                 >
+                  {selectedReport?.id === report.id ? (
+                    <span className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">선택됨</span>
+                  ) : null}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="rounded-full bg-canvas p-2 text-primary">
@@ -669,7 +685,7 @@ export default function ReportsPage() {
                     <p className="mt-2 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <button
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-surface-dark px-3 py-2 text-sm font-semibold text-canvas transition hover:bg-primary"
                       onClick={() => setSelectedReportId(report.id)}
@@ -680,19 +696,11 @@ export default function ReportsPage() {
                     </button>
                     <button
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
-                      onClick={() => copyMarkdown(report)}
-                      type="button"
-                    >
-                      <Clipboard className="h-4 w-4 shrink-0" />
-                      <span className="whitespace-nowrap">마크다운 복사</span>
-                    </button>
-                    <button
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
-                      onClick={() => downloadMarkdown(report)}
+                      onClick={() => openPrintableReport(report)}
                       type="button"
                     >
                       <Download className="h-4 w-4 shrink-0" />
-                      <span className="whitespace-nowrap">.md 다운로드</span>
+                      <span className="whitespace-nowrap">PDF 저장</span>
                     </button>
                   </div>
                 </article>
