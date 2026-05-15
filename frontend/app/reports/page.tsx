@@ -3,7 +3,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ChevronLeft, ChevronRight, Database, Download, Eye, FileText, Mail, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Database, Download, FileText, Mail, MessageSquare } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeading } from "@/components/page-heading";
 import { demoWorkflowRuns, listWorkflowRuns, type WorkflowRun } from "@/lib/api";
@@ -692,14 +692,15 @@ export default function ReportsPage() {
         />
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <div className="rounded-full bg-surface-card px-4 py-2 text-sm text-body">
+          <div className="flex items-center gap-2 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
+            <span className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`} />
             {isLoading
               ? "보고서 산출물 조회 중..."
               : isError
-                ? "백엔드 미연결 상태입니다. 데모 보고서를 표시합니다."
+                ? "백엔드 미연결 — 데모 보고서 표시 중"
                 : isFallback
-                  ? "생성된 보고서가 없어 데모 보고서를 표시합니다."
-                  : "보고서 산출물 정보 연결됨"}
+                  ? "백엔드 연결됨 — 실행 결과 없음, 데모 표시 중"
+                  : "백엔드 연결됨"}
           </div>
           <div className="rounded-full bg-surface-card px-4 py-2 text-sm text-body">
             시나리오별 대표 {scenarioReports.length}건 표시
@@ -712,12 +713,13 @@ export default function ReportsPage() {
             <div className="grid gap-4">
               {pagedReports.map((report) => (
                 <article
-                  className={`relative rounded-xl border p-5 shadow-soft transition ${
+                  className={`relative cursor-pointer rounded-xl border p-5 shadow-soft transition ${
                     selectedReport?.id === report.id
                       ? "border-primary bg-surface-plain ring-2 ring-primary/30"
                       : "border-hairline bg-surface-card hover:border-primary/60"
                   }`}
                   key={`${report.runId}-${report.id}`}
+                  onClick={() => setSelectedReportId(report.id)}
                 >
                   {selectedReport?.id === report.id ? (
                     <span className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">선택됨</span>
@@ -742,22 +744,14 @@ export default function ReportsPage() {
                     <p className="mt-2 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="mt-5">
                     <button
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-surface-dark px-3 py-2 text-sm font-semibold text-canvas transition hover:bg-primary"
-                      onClick={() => setSelectedReportId(report.id)}
-                      type="button"
-                    >
-                      <Eye className="h-4 w-4 shrink-0" />
-                      <span className="whitespace-nowrap">미리보기</span>
-                    </button>
-                    <button
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
-                      onClick={() => openPrintableReport(report)}
+                      className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
+                      onClick={(e) => { e.stopPropagation(); openPrintableReport(report); }}
                       type="button"
                     >
                       <Download className="h-4 w-4 shrink-0" />
-                      <span className="whitespace-nowrap">PDF 저장</span>
+                      PDF 저장
                     </button>
                   </div>
                 </article>
@@ -793,7 +787,7 @@ export default function ReportsPage() {
             {selectedReport ? (
               <>
                 <div className="border-b border-hairline pb-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">미리보기</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">상세 보기</p>
                   <h2 className="mt-2 font-display text-3xl text-ink">{workflowTitleLabel(selectedReport.title)}</h2>
                   <p className="mt-2 text-sm text-muted">
                     {workflowTitleLabel(selectedReport.runTitle)} · {formatDate(selectedReport.createdAt)}

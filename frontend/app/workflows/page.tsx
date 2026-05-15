@@ -32,8 +32,9 @@ export default function WorkflowsPage() {
           title="업무 자동화 상태를 한 화면에서 봅니다"
           description="진행 중, 승인 대기, 완료된 에이전트 워크플로를 운영자가 빠르게 스캔할 수 있는 대시보드입니다."
         />
-        <div className="mt-4 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-          {isLoading ? "백엔드 조회 중..." : isError ? "백엔드 미연결: 데모 데이터 표시 중" : "백엔드 연결됨"}
+        <div className="mt-4 flex items-center gap-2 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`} />
+          {isLoading ? "백엔드 조회 중..." : isError ? "백엔드 미연결 — 데모 데이터 표시 중" : "백엔드 연결됨"}
         </div>
 
         <div className="mt-8 overflow-hidden rounded-lg border border-hairline bg-surface-plain">
