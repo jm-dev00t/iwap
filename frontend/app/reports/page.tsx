@@ -721,38 +721,36 @@ export default function ReportsPage() {
                   key={`${report.runId}-${report.id}`}
                   onClick={() => setSelectedReportId(report.id)}
                 >
-                  {selectedReport?.id === report.id ? (
-                    <span className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">선택됨</span>
-                  ) : null}
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="rounded-full bg-canvas p-2 text-primary">
                         <FileText className="h-4 w-4" />
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-teal">{report.format === "MARKDOWN" ? "마크다운" : report.format}</p>
-                        <h2 className="mt-1 text-lg font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
+                        <p className="text-xs text-muted">{formatDate(report.createdAt)}</p>
+                        <h2 className="mt-0.5 text-base font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
                       </div>
                     </div>
-                    <span className="rounded-full bg-canvas px-3 py-1 text-xs font-medium text-muted">{formatDate(report.createdAt)}</span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {selectedReport?.id === report.id ? (
+                        <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">선택됨</span>
+                      ) : null}
+                      <button
+                        className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-plain hover:text-primary"
+                        onClick={(e) => { e.stopPropagation(); openPrintableReport(report); }}
+                        title="PDF 저장"
+                        type="button"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
-                  <p className="mt-4 text-sm leading-6 text-body">{report.summary}</p>
-                  <div className="mt-4 rounded-lg bg-surface-plain p-3">
+                  <p className="mt-3 text-sm leading-6 text-body">{report.summary}</p>
+                  <div className="mt-3 rounded-lg bg-surface-plain p-3">
                     <p className="text-xs font-medium text-muted">워크플로</p>
                     <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
-                    <p className="mt-2 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
-                  </div>
-
-                  <div className="mt-5">
-                    <button
-                      className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-hairline bg-surface-plain px-3 py-2 text-sm font-semibold text-ink transition hover:border-primary"
-                      onClick={(e) => { e.stopPropagation(); openPrintableReport(report); }}
-                      type="button"
-                    >
-                      <Download className="h-4 w-4 shrink-0" />
-                      PDF 저장
-                    </button>
+                    <p className="mt-1 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
                   </div>
                 </article>
               ))}
