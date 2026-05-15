@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 className={`flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-action text-canvas"
+                    ? "bg-primary text-canvas"
                     : "text-body hover:bg-surface-card"
                 }`}
                 href={item.href}
@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   aria-label={item.label}
                   className={`grid h-9 w-9 shrink-0 place-items-center rounded-md transition-colors ${
                     active
-                      ? "bg-action text-canvas"
+                      ? "bg-primary text-canvas"
                       : "text-body hover:bg-surface-card"
                   }`}
                   href={item.href}
