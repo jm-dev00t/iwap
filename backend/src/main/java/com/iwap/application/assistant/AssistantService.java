@@ -122,8 +122,9 @@ public class AssistantService {
                 .filter(s -> s.key().equals(plan.scenarioKey()))
                 .findFirst()
                 .orElse(WorkflowScenario.MONTHLY_SALES_REPORT);
-        String title = plan.summary() != null && !plan.summary().isBlank() ? plan.summary() : scenario.title();
-        return new WorkflowPlan(scenario, title, plan.requiresApproval(), plan.approvalReason(), steps);
+        String title = scenario.title();
+        // execute() 진입 시 승인은 이미 완료 — approvalRequired=false로 설정해 재진입 방지
+        return new WorkflowPlan(scenario, title, false, plan.approvalReason(), steps);
     }
 
     private AgentType agentTypeFor(String toolName) {
