@@ -30,6 +30,9 @@ services:
       IWAP_DEMO_JWT_SECRET: ${IWAP_DEMO_JWT_SECRET:-change-me-for-real-deployments}
       IWAP_ALLOWED_ORIGINS: ${IWAP_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      IWAP_SPRING_AI_CHAT_MODEL: ${IWAP_SPRING_AI_CHAT_MODEL:-none}
+      IWAP_OPENAI_CHAT_MODEL: ${IWAP_OPENAI_CHAT_MODEL:-}
+      IWAP_OPENAI_BASE_URL: ${IWAP_OPENAI_BASE_URL:-https://api.openai.com}
     ports:
       - "${IWAP_BACKEND_PORT:-8080}:8080"
 

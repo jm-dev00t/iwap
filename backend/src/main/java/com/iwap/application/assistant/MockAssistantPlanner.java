@@ -83,7 +83,19 @@ public class MockAssistantPlanner implements AssistantPlanner {
                 || normalizedCommand.contains("weekly")) {
             return "weekly-sales-report";
         }
-        return "monthly-sales-report";
+        if (normalizedCommand.contains("매출")
+                || normalizedCommand.contains("보고서")
+                || normalizedCommand.contains("리포트")
+                || normalizedCommand.contains("report")
+                || normalizedCommand.contains("월간")
+                || normalizedCommand.contains("monthly")
+                || normalizedCommand.contains("실적")
+                || normalizedCommand.contains("메일")
+                || normalizedCommand.contains("email")
+                || normalizedCommand.contains("이메일")) {
+            return "monthly-sales-report";
+        }
+        return "unsupported";
     }
 
     private List<AssistantPlanAction> actionsFor(String scenarioKey, boolean includeEmail) {
