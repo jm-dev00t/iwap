@@ -1,5 +1,7 @@
 package com.iwap.application.delivery;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.mail.SimpleMailMessage;
@@ -13,6 +15,8 @@ import java.util.Properties;
 @Service
 public class DeliveryService {
 
+    private static final Logger log = LoggerFactory.getLogger(DeliveryService.class);
+
     private final String integrationMode;
     private final String smtpHost;
     private final int smtpPort;
@@ -22,7 +26,7 @@ public class DeliveryService {
     private final String slackDefaultChannel;
 
     public DeliveryService(
-            @Value("${iwap.integrations.mode:mock}") String integrationMode,
+            @Value("${IWAP_INTEGRATION_MODE:mock}") String integrationMode,
             @Value("${SMTP_HOST:}") String smtpHost,
             @Value("${SMTP_PORT:587}") int smtpPort,
             @Value("${SMTP_USERNAME:}") String smtpUsername,
@@ -66,6 +70,7 @@ public class DeliveryService {
             sender.send(message);
             return DeliveryReceipt.sent("email", to, "실제 이메일 발송을 완료했습니다.");
         } catch (Exception exception) {
+            log.error("이메일 발송 실패 to={} error={}", to, exception.getMessage(), exception);
             return DeliveryReceipt.failed("email", to, "이메일 발송 실패: " + exception.getMessage());
         }
     }

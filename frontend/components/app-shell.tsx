@@ -3,6 +3,7 @@
 import { BarChart3, CheckSquare, Database, History, LayoutDashboard, MessageSquareText, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { TopBar } from "@/components/top-bar";
 
 const navItems = [
   { label: "명령 센터", href: "/", icon: MessageSquareText },
@@ -24,13 +25,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-hairline bg-surface-soft px-5 py-6 lg:block">
-        <div className="flex items-center gap-3">
+        <Link className="flex items-center gap-3" href="/">
           <div className="grid h-9 w-9 place-items-center rounded-lg bg-surface-dark text-canvas">IW</div>
           <div>
             <p className="text-sm font-semibold">IWAP</p>
             <p className="text-xs text-muted">AI 업무 자동화 콘솔</p>
           </div>
-        </div>
+        </Link>
         <nav className="mt-10 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -80,7 +81,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       </div>
-      <main className="lg:pl-64">{children}</main>
+      <main className="lg:pl-64">
+        <TopBar />
+        {children}
+      </main>
     </div>
   );
 }

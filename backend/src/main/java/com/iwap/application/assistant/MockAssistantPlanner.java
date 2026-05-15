@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 @Component
 public class MockAssistantPlanner implements AssistantPlanner {
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("[^\\s@]+@[^\\s@]+\\.[^\\s@]+");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}");
 
     @Override
     public AssistantPlan plan(String command, AssistantSession session) {

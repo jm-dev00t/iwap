@@ -50,6 +50,44 @@ const kpis = [
   { label: "평균 마진", value: "34.2%", delta: "+0.9%p" },
 ];
 
+const weeklyActivityData = [
+  { activity: "신규 리드", thisWeek: 64, lastWeek: 57 },
+  { activity: "미팅 전환", thisWeek: 18, lastWeek: 17 },
+  { activity: "제안서 발송", thisWeek: 11, lastWeek: 9 },
+  { activity: "계약 성사", thisWeek: 3, lastWeek: 4 },
+];
+
+const weeklyKpis = [
+  { label: "리드 전환율", value: "28.1%", delta: "+1.7%p" },
+  { label: "예상 파이프라인", value: "94M원", delta: "+8.4%" },
+  { label: "평균 딜 사이즈", value: "31.3M원", delta: "+44.6%" },
+];
+
+const inventoryChartData = [
+  { sku: "RED-001", name: "레드 박스", current: 12, threshold: 50 },
+  { sku: "GRN-014", name: "그린 라벨", current: 8, threshold: 40 },
+  { sku: "BLK-021", name: "블랙 완충재", current: 17, threshold: 60 },
+  { sku: "WHT-033", name: "흰색 테이프", current: 22, threshold: 80 },
+  { sku: "BLU-007", name: "블루 쇼핑백", current: 6, threshold: 30 },
+  { sku: "YLW-019", name: "노란 스티커", current: 31, threshold: 100 },
+  { sku: "SLV-044", name: "실버 리본", current: 4, threshold: 25 },
+];
+
+const customerPieData = [
+  { name: "완료", value: 1 },
+  { name: "진행중", value: 1 },
+  { name: "예정", value: 3 },
+];
+const customerPieColors = ["var(--success)", "var(--primary)", "var(--surface-card)"];
+
+const onboardingSteps = [
+  { step: 1, label: "환경 설정", status: "완료" },
+  { step: 2, label: "서비스 교육", status: "진행중" },
+  { step: 3, label: "데이터 이관", status: "예정" },
+  { step: 4, label: "담당자 미팅", status: "예정" },
+  { step: 5, label: "검수 승인", status: "예정" },
+];
+
 const reportSourceData = {
   monthly: {
     title: "월간 매출 집계 원천 자료",
@@ -260,7 +298,7 @@ function MarkdownPreview({ content }: { content: string }) {
             <thead className="bg-canvas">
               <tr>
                 {header.map((cell) => (
-                  <th className="px-3 py-2 text-left font-semibold text-ink" key={cell}>
+                  <th scope="col" className="px-3 py-2 text-left font-semibold text-muted" key={cell}>
                     {cell}
                   </th>
                 ))}
@@ -351,7 +389,7 @@ function PaginatedTable({ table }: { table: { title: string; columns: string[]; 
         <thead className="bg-canvas text-muted">
           <tr>
             {table.columns.map((column) => (
-              <th className="px-3 py-2 text-left font-semibold" key={column}>{column}</th>
+              <th scope="col" className="px-3 py-2 text-left font-semibold" key={column}>{column}</th>
             ))}
           </tr>
         </thead>
@@ -373,7 +411,7 @@ function PaginatedTable({ table }: { table: { title: string; columns: string[]; 
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex min-h-10 items-center gap-1 rounded-md px-3 py-2 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4" />
             이전
@@ -382,7 +420,7 @@ function PaginatedTable({ table }: { table: { title: string; columns: string[]; 
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex min-h-10 items-center gap-1 rounded-md px-3 py-2 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
           >
             다음
             <ChevronRight className="h-4 w-4" />
@@ -432,7 +470,7 @@ function MonthlySalesDocument() {
     <section className="rounded-xl border border-hairline bg-surface-plain p-5 shadow-soft">
       <div className="rounded-md bg-surface-dark px-5 py-4 text-center text-xl font-bold text-canvas">2026년 5월 채널별 매출현황</div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         <div>
           <h3 className="text-sm font-semibold text-ink">[ 채널별 매출 구성비(%) ]</h3>
           <div className="mt-4 h-64">
@@ -515,6 +553,223 @@ function MonthlySalesDocument() {
             </table>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function WeeklySalesDocument() {
+  return (
+    <section className="rounded-xl border border-hairline bg-surface-plain p-5 shadow-soft">
+      <div className="rounded-md bg-surface-dark px-5 py-4 text-center text-xl font-bold text-canvas">2026년 5월 4주차 주간 영업실적 리포트</div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div>
+          <h3 className="text-sm font-semibold text-ink">[ 이번 주 vs 전주 영업 활동 비교 ]</h3>
+          <div className="mt-4 h-64">
+            <ResponsiveContainer height="100%" width="100%">
+              <BarChart data={weeklyActivityData} margin={{ left: -8, right: 8, top: 18 }}>
+                <CartesianGrid stroke={reportGridColor} strokeDasharray="3 3" />
+                <XAxis dataKey="activity" tick={{ fill: reportMutedColor, fontSize: 11 }} />
+                <YAxis tick={{ fill: reportMutedColor, fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{ background: "var(--surface-plain)", borderRadius: 8, borderColor: "var(--hairline)", color: "var(--ink)" }}
+                  formatter={(value: number, name) => [value, name === "thisWeek" ? "이번 주" : "전주"]}
+                />
+                <Bar dataKey="lastWeek" fill="var(--surface-card)" name="전주" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="thisWeek" fill="var(--primary)" name="이번 주" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="mt-5 overflow-x-auto rounded-md border border-hairline">
+            <table className="min-w-full text-sm">
+              <thead className="bg-surface-dark text-canvas">
+                <tr>
+                  <th scope="col" className="px-3 py-2 text-left">고객</th>
+                  <th scope="col" className="px-3 py-2 text-left">단계</th>
+                  <th scope="col" className="px-3 py-2 text-right">예상 금액</th>
+                  <th scope="col" className="px-3 py-2 text-left">다음 액션</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {[
+                  ["Blue Harbor Retail", "제안 검토", "42,000,000원", "ROI 자료 발송"],
+                  ["Northwind Partners", "가격 협의", "31,000,000원", "계약 조건 조율"],
+                  ["Urban Supply Co.", "기술 검토", "21,000,000원", "보안 체크리스트"],
+                ].map((row) => (
+                  <tr key={row[0]}>
+                    <td className="px-3 py-2 font-medium text-ink">{row[0]}</td>
+                    <td className="px-3 py-2 text-body">{row[1]}</td>
+                    <td className="px-3 py-2 text-right text-body">{row[2]}</td>
+                    <td className="px-3 py-2 text-body">{row[3]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-ink">[ 핵심 성과 지표 ]</h3>
+          <div className="mt-4 grid gap-3">
+            {weeklyKpis.map((kpi) => (
+              <article className="flex items-center justify-between rounded-lg bg-surface-card p-4" key={kpi.label}>
+                <div>
+                  <p className="text-sm text-muted">{kpi.label}</p>
+                  <p className="mt-1 text-xl font-semibold text-ink">{kpi.value}</p>
+                </div>
+                <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-sm font-semibold text-success">{kpi.delta}</span>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-2 rounded-md bg-surface-dark p-4 text-sm text-canvas">
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
+              <span>신규 리드</span><strong>64건</strong>
+            </div>
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
+              <span>미팅 전환</span><strong>18건</strong>
+            </div>
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
+              <span>제안서 발송</span><strong>11건</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>계약 성사</span><strong>3건</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CustomerOnboardingDocument() {
+  return (
+    <section className="rounded-xl border border-hairline bg-surface-plain p-5 shadow-soft">
+      <div className="rounded-md bg-surface-dark px-5 py-4 text-center text-xl font-bold text-canvas">Blue Harbor Retail 신규 고객 온보딩 현황</div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <div>
+          <h3 className="text-sm font-semibold text-ink">[ 온보딩 단계 진행 현황 ]</h3>
+          <div className="mt-4 h-52">
+            <ResponsiveContainer height="100%" width="100%">
+              <PieChart>
+                <Pie data={customerPieData} dataKey="value" innerRadius={48} outerRadius={84} paddingAngle={2}>
+                  {customerPieData.map((entry, index) => (
+                    <Cell fill={customerPieColors[index % customerPieColors.length]} key={entry.name} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number, name) => [`${value}단계`, String(name)]} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 flex flex-wrap justify-center gap-3 text-xs">
+            {customerPieData.map((d, i) => (
+              <span className="flex items-center gap-1.5" key={d.name}>
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: customerPieColors[i] }} />
+                <span className="text-body">{d.name} {d.value}단계</span>
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-2 rounded-md bg-surface-dark p-4 text-sm text-canvas">
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
+              <span>고객사</span><strong>Blue Harbor</strong>
+            </div>
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
+              <span>세그먼트</span><strong>Growth Retail</strong>
+            </div>
+            <div className="flex justify-between border-b border-canvas/20 pb-2">
+              <span>계약 유형</span><strong>연간 구독</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>SLA 등급</span><strong>Standard</strong>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-ink">[ 5단계 온보딩 프로세스 ]</h3>
+          <div className="mt-4 space-y-3">
+            {onboardingSteps.map((item) => {
+              const isDone = item.status === "완료";
+              const isActive = item.status === "진행중";
+              return (
+                <div className="flex items-center gap-3 rounded-lg bg-surface-card p-3" key={item.step}>
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold ${isDone ? "bg-success text-white" : isActive ? "bg-primary text-white" : "bg-surface-plain text-muted"}`}>
+                    {item.step}
+                  </span>
+                  <p className={`flex-1 text-sm font-medium ${isDone || isActive ? "text-ink" : "text-muted"}`}>{item.label}</p>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${isDone ? "bg-success/10 text-success" : isActive ? "bg-primary/10 text-primary" : "bg-surface-plain text-muted"}`}>
+                    {item.status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {[
+              { label: "온보딩 진행률", value: "20%", note: "1/5 단계 완료" },
+              { label: "담당 매니저", value: "내부 배정", note: "account-owner 지정" },
+            ].map((kpi) => (
+              <article className="rounded-lg bg-surface-card p-4" key={kpi.label}>
+                <p className="text-xs text-muted">{kpi.label}</p>
+                <p className="mt-1 text-xl font-semibold text-ink">{kpi.value}</p>
+                <p className="mt-0.5 text-xs text-muted">{kpi.note}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InventoryDocument() {
+  return (
+    <section className="rounded-xl border border-hairline bg-surface-plain p-5 shadow-soft">
+      <div className="rounded-md bg-surface-dark px-5 py-4 text-center text-xl font-bold text-canvas">재고 부족 품목 현황 — 구매팀 알림 초안</div>
+
+      <div className="mt-6 grid grid-cols-3 gap-4">
+        {[
+          { label: "부족 품목 수", value: "7건", note: "즉시 처리 필요" },
+          { label: "총 권장 발주량", value: "800개", note: "7개 SKU 합산" },
+          { label: "최저 재고 품목", value: "SLV-044", note: "현재 재고 4개" },
+        ].map((kpi) => (
+          <article className="flex items-center justify-between rounded-lg bg-surface-card p-4" key={kpi.label}>
+            <div>
+              <p className="text-xs text-muted">{kpi.label}</p>
+              <p className="mt-1 text-lg font-semibold text-ink">{kpi.value}</p>
+            </div>
+            <span className="rounded-full bg-amber/10 px-2.5 py-0.5 text-xs font-semibold text-amber">{kpi.note}</span>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-6">
+        <h3 className="text-sm font-semibold text-ink">[ SKU별 현재 재고 vs 재주문 기준 ]</h3>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer height="100%" width="100%">
+            <BarChart data={inventoryChartData} margin={{ left: -8, right: 8, top: 18 }}>
+              <CartesianGrid stroke={reportGridColor} strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fill: reportMutedColor, fontSize: 11 }} />
+              <YAxis tick={{ fill: reportMutedColor, fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{ background: "var(--surface-plain)", borderRadius: 8, borderColor: "var(--hairline)", color: "var(--ink)" }}
+                formatter={(value: number, name) => [value, name === "threshold" ? "재주문 기준" : "현재 재고"]}
+              />
+              <Bar dataKey="threshold" fill="var(--surface-card)" name="재주문 기준" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="current" name="현재 재고" radius={[3, 3, 0, 0]}>
+                {inventoryChartData.map((entry) => (
+                  <Cell fill={entry.current < entry.threshold ? "var(--error)" : "var(--primary)"} key={entry.sku} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="mt-2 text-xs text-muted">빨간 막대: 재주문 기준 미달 품목 (즉시 발주 권장)</p>
       </div>
     </section>
   );
@@ -613,22 +868,63 @@ function ScenarioReportGroup({
   onSelect: (id: string) => void;
   onPdf: (report: Report) => void;
 }) {
-  const report = reports[0];
+  const [page, setPage] = useState(0);
+  const total = reports.length;
+  const report = reports[page];
   if (!report) return null;
+
+  function goPrev(e: React.MouseEvent) {
+    e.stopPropagation();
+    setPage((p) => Math.max(0, p - 1));
+  }
+  function goNext(e: React.MouseEvent) {
+    e.stopPropagation();
+    setPage((p) => Math.min(total - 1, p + 1));
+  }
 
   return (
     <div className="mt-6 first:mt-0">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-        {SCENARIO_LABELS[scenarioKey] ?? scenarioKey}{" "}
-        <span className="text-ink">{reports.length}건</span>
-      </p>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+          {SCENARIO_LABELS[scenarioKey] ?? scenarioKey}{" "}
+          <span className="text-ink">{total}건</span>
+        </p>
+        {total > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={goPrev}
+              disabled={page === 0}
+              aria-label="이전 보고서"
+              className="grid h-7 w-7 place-items-center rounded-md text-muted hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+              type="button"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="min-w-[2.5rem] text-center text-xs text-muted">
+              {page + 1} / {total}
+            </span>
+            <button
+              onClick={goNext}
+              disabled={page === total - 1}
+              aria-label="다음 보고서"
+              className="grid h-7 w-7 place-items-center rounded-md text-muted hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+              type="button"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
       <article
-        className={`relative cursor-pointer rounded-xl border p-5 shadow-soft transition ${
+        role="button"
+        tabIndex={0}
+        className={`relative cursor-pointer rounded-xl border p-5 shadow-soft transition-colors ${
           selectedReportId === report.id
-            ? "border-primary bg-surface-plain ring-2 ring-primary/30"
-            : "border-hairline bg-surface-card hover:border-primary/60"
+            ? "border-primary bg-surface-plain ring-2 ring-primary"
+            : "border-hairline bg-surface-card hover:border-primary/60 hover:bg-surface-plain"
         }`}
         onClick={() => onSelect(report.id)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(report.id); } }}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -645,16 +941,17 @@ function ScenarioReportGroup({
               <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">선택됨</span>
             ) : null}
             <button
-              className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-plain hover:text-primary"
+              className="grid h-10 w-10 place-items-center rounded-md text-muted hover:bg-surface-plain hover:text-primary"
               onClick={(e) => { e.stopPropagation(); onPdf(report); }}
               title="PDF 저장"
+              aria-label="PDF로 저장"
               type="button"
             >
               <Download className="h-4 w-4" />
             </button>
           </div>
         </div>
-        <p className="mt-3 text-sm leading-6 text-body">{report.summary}</p>
+        <p className="mt-3 text-sm leading-6 text-body line-clamp-2">{report.summary}</p>
         <div className="mt-3 rounded-lg bg-surface-plain p-3">
           <p className="text-xs font-medium text-muted">워크플로</p>
           <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
@@ -781,7 +1078,12 @@ export default function ReportsPage() {
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`} />
+            <span
+              role="status"
+              aria-live="polite"
+              aria-label={`백엔드 연결 상태: ${isLoading ? "조회 중" : isError ? "오류" : "연결됨"}`}
+              className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`}
+            />
             {isLoading
               ? "보고서 산출물 조회 중..."
               : isError
@@ -814,47 +1116,57 @@ export default function ReportsPage() {
             ))}
           </div>
 
-          <aside className="rounded-xl border border-hairline bg-surface-plain p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-auto">
+          <aside aria-label="보고서 상세 보기" className="rounded-xl border border-hairline bg-surface-plain p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-auto">
             {selectedReport ? (
               <>
                 <div className="border-b border-hairline pb-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">상세 보기</p>
-                  <h2 className="mt-2 font-display text-3xl text-ink">{workflowTitleLabel(selectedReport.title)}</h2>
+                  <h2 className="mt-2 text-2xl font-bold text-ink">{workflowTitleLabel(selectedReport.title)}</h2>
                   <p className="mt-2 text-sm text-muted">
                     {workflowTitleLabel(selectedReport.runTitle)} · {formatDate(selectedReport.createdAt)}
                   </p>
                 </div>
-                {isMonthlySalesReport(selectedReport) ? (
-                  <div className="mt-5 space-y-5">
-                    <ReportSourceDataPanel scenario="monthly" />
-                    <section className="rounded-xl border border-hairline bg-surface-card p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">핵심 지표</p>
-                      <div className="mt-4 grid gap-3 md:grid-cols-3">
-                        {kpis.map((kpi) => (
-                          <article className="flex items-center justify-between rounded-lg bg-surface-plain p-4" key={kpi.label}>
-                            <div>
-                              <p className="text-sm text-muted">{kpi.label}</p>
-                              <p className="mt-1 text-2xl font-semibold text-ink">{kpi.value}</p>
-                            </div>
-                            <span className="rounded-full bg-success/10 px-3 py-1 text-sm font-semibold text-success">{kpi.delta}</span>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                    <MonthlySalesDocument />
-                    <DeliveryStatus report={selectedReport} />
-                  </div>
-                ) : (
-                  <div className="mt-5 space-y-5">
-                    <ReportSourceDataPanel scenario={reportScenario(selectedReport)} />
-                    <MarkdownPreview content={selectedReport.content} />
-                    <DeliveryStatus report={selectedReport} />
-                  </div>
-                )}
+                {(() => {
+                  const scenario = reportScenario(selectedReport);
+                  const kpiList = scenario === "weekly" ? weeklyKpis : kpis;
+                  const showKpis = scenario === "monthly" || scenario === "weekly";
+                  const DocumentComponent =
+                    scenario === "monthly" ? MonthlySalesDocument :
+                    scenario === "weekly" ? WeeklySalesDocument :
+                    scenario === "customer" ? CustomerOnboardingDocument :
+                    scenario === "inventory" ? InventoryDocument :
+                    null;
+                  return (
+                    <div className="mt-5 space-y-5">
+                      <ReportSourceDataPanel scenario={scenario} />
+                      {showKpis ? (
+                        <section className="rounded-xl border border-hairline bg-surface-card p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">핵심 지표</p>
+                          <div className="mt-4 grid gap-3 md:grid-cols-3">
+                            {kpiList.map((kpi) => (
+                              <article className="flex items-center justify-between rounded-lg bg-surface-plain p-4" key={kpi.label}>
+                                <div>
+                                  <p className="text-sm text-muted">{kpi.label}</p>
+                                  <p className="mt-1 text-2xl font-semibold text-ink">{kpi.value}</p>
+                                </div>
+                                <span className="rounded-full bg-success/10 px-3 py-1 text-sm font-semibold text-success">{kpi.delta}</span>
+                              </article>
+                            ))}
+                          </div>
+                        </section>
+                      ) : null}
+                      {DocumentComponent ? <DocumentComponent /> : <MarkdownPreview content={selectedReport.content} />}
+                      <DeliveryStatus report={selectedReport} />
+                    </div>
+                  );
+                })()}
               </>
             ) : (
-              <div className="flex min-h-64 items-center justify-center rounded-lg bg-surface-card p-6 text-center text-sm text-muted">
-                표시할 보고서가 없습니다. 워크플로를 실행하면 생성된 artifact가 여기에 표시됩니다.
+              <div className="flex min-h-64 flex-col items-center justify-center rounded-lg bg-surface-card p-6 text-center">
+                <p className="text-sm text-muted">아직 생성된 보고서가 없습니다.</p>
+                <a href="/" className="mt-3 text-sm font-medium text-primary hover:underline">
+                  명령 센터에서 워크플로 실행
+                </a>
               </div>
             )}
           </aside>

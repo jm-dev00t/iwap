@@ -18,10 +18,10 @@ type ChatMessage = {
 };
 
 const examples = [
-  "이번 달 매출 보고서 만들어서 manager@demo-company.com으로 보내줘",
-  "이번 주 영업실적 리포트 만들고 director@demo-company.com으로 공유해줘",
-  "재고 부족 품목 확인하고 구매팀에 알림 보내줘",
-  "Blue Harbor Retail 신규 고객 온보딩 처리해줘",
+  { label: "월간 매출 보고서", command: "이번 달 매출 보고서 만들어서 manager@demo-company.com으로 보내줘" },
+  { label: "주간 영업실적", command: "이번 주 영업실적 리포트 만들고 director@demo-company.com으로 공유해줘" },
+  { label: "재고 확인", command: "재고 부족 품목 확인하고 구매팀에 알림 보내줘" },
+  { label: "신규 고객 온보딩", command: "Blue Harbor Retail 신규 고객 온보딩 처리해줘" },
 ];
 
 function PlanCard({
@@ -43,7 +43,10 @@ function PlanCard({
           <h2 className="mt-2 text-xl font-semibold text-ink">AI가 이해한 실행 계획</h2>
           <p className="mt-2 text-sm leading-6 text-body">{plan.summary}</p>
         </div>
-        <span className="rounded-full bg-canvas px-3 py-1 text-xs font-semibold text-body">
+        <span
+          title="AI가 업무 요청을 올바르게 이해한 확률 (70% 이상 권장)"
+          className="rounded-full bg-canvas px-3 py-1 text-xs font-medium text-body"
+        >
           신뢰도 {Math.round(plan.confidence * 100)}%
         </span>
       </div>
@@ -61,7 +64,7 @@ function PlanCard({
                   {toolLabel(action.toolName)}
                 </span>
                 {action.external ? (
-                  <span className="rounded-full bg-amber/20 px-2 py-0.5 text-xs font-medium text-ink">외부 실행</span>
+                  <span className="rounded-full bg-amber/20 px-2 py-0.5 text-xs font-medium text-ink">승인 필요</span>
                 ) : null}
               </span>
               <span className="mt-1 block text-sm leading-6 text-body">{action.description}</span>
@@ -81,9 +84,10 @@ function PlanCard({
         className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-active disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isExecuting}
         onClick={onExecute}
+        aria-label={`${plan.summary} — 승인하고 실행`}
         type="button"
       >
-        {isExecuting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+        {isExecuting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" aria-hidden="true" />}
         승인하고 실행
       </button>
     </section>
@@ -97,7 +101,7 @@ function ResultCard({ run }: { run: WorkflowRun }) {
     <section className="rounded-lg border border-hairline bg-surface-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Workflow Result</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">실행 결과</p>
           <h2 className="mt-2 text-xl font-semibold text-ink">{workflowTitleLabel(run.title)}</h2>
           <p className="mt-2 text-sm text-body">{run.command}</p>
         </div>
@@ -105,14 +109,14 @@ function ResultCard({ run }: { run: WorkflowRun }) {
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href="/reports">
-          보고서 확인 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
+        <a className="rounded-md bg-primary px-3 py-3 text-sm font-semibold text-white hover:bg-primary-active" href="/reports">
+          보고서 확인 <ArrowRight className="ml-1 inline h-3.5 w-3.5" aria-hidden="true" />
         </a>
         <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href={`/workflows?id=${run.id}`}>
-          실행 이력 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
+          실행 이력 <ArrowRight className="ml-1 inline h-3.5 w-3.5" aria-hidden="true" />
         </a>
         <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href={`/approvals?id=${run.id}`}>
-          승인함 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
+          승인함 <ArrowRight className="ml-1 inline h-3.5 w-3.5" aria-hidden="true" />
         </a>
       </div>
 
@@ -120,7 +124,7 @@ function ResultCard({ run }: { run: WorkflowRun }) {
         <div className="mt-4 space-y-2">
           {deliveryTools.map((tool) => (
             <div className="flex items-center gap-2 rounded-md bg-canvas p-3 text-sm text-body" key={`${run.id}-${tool.toolName}`}>
-              <MailCheck className="h-4 w-4 text-primary" />
+              <MailCheck className="h-4 w-4 text-primary" aria-hidden="true" />
               <span className="font-semibold text-ink">{toolLabel(tool.toolName)}</span>
               <span>{tool.status === "COMPLETED" ? "데모 발송 기록 완료" : "승인 또는 실행 대기"}</span>
             </div>
@@ -212,30 +216,59 @@ export function CommandCenter() {
   }
 
   return (
-    <section className="rounded-xl border border-hairline bg-surface-plain p-6">
-      <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">AI Workflow Assistant</p>
-      <h1 className="mt-2 text-2xl font-semibold text-ink md:text-3xl">
+    <section aria-label="AI 업무 어시스턴트" className="rounded-xl border border-hairline bg-surface-plain p-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">AI Workflow Assistant</p>
+      <h1 className="mt-2 text-3xl font-bold leading-tight text-ink md:text-4xl">
         업무를 말하면 AI가 계획을 세우고 실행합니다
       </h1>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-body">
-        Groq LLM이 업무 의도를 분석해 실행 계획을 수립합니다. 외부 발송이 포함된 경우 실행 전 승인을 요청합니다.
+        AI가 업무 의도를 분석해 실행 계획을 수립합니다. 외부 발송이 포함된 경우 실행 전 승인을 요청합니다.
       </p>
 
-      <div className="mt-8 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-soft">
+      <div className="mt-4 flex flex-wrap gap-2">
+        {examples.map((example) => (
+          <button
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface-card px-4 text-sm font-medium text-body hover:text-primary"
+            key={example.command}
+            onClick={() => void submitChat(example.command)}
+            type="button"
+          >
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            {example.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 space-y-4">
+        {plan ? <PlanCard isExecuting={isExecuting} onExecute={() => void executePlan()} plan={plan} /> : null}
+        {run ? <ResultCard run={run} /> : null}
+      </div>
+
+      <div className="mt-6 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-soft">
         <div className="border-b border-hairline bg-surface-card px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">AI 업무 채팅</p>
-          <p className="mt-1 text-sm text-muted">업무 지시, 추가 정보 질문, 실행 계획 확인, 결과 확인이 한 흐름으로 이어집니다.</p>
         </div>
 
-        <div className="max-h-[380px] space-y-4 overflow-y-auto px-4 py-5" ref={chatContainerRef}>
+        <div
+          role="log"
+          aria-live="polite"
+          aria-label="대화 기록"
+          className="max-h-[280px] space-y-4 overflow-y-auto px-4 py-5 md:max-h-[380px]"
+          ref={chatContainerRef}
+        >
           {messages.map((message) => {
             const isUser = message.role === "user";
             const Icon = isUser ? UserRound : Bot;
             return (
-              <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`} key={message.id}>
+              <div
+                className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}
+                role="article"
+                aria-label={`${isUser ? "사용자" : "AI"} 메시지`}
+                key={message.id}
+              >
                 {!isUser ? (
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-dark text-canvas">
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                 ) : null}
                 <div
@@ -247,7 +280,7 @@ export function CommandCenter() {
                 </div>
                 {isUser ? (
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-card text-primary">
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                 ) : null}
               </div>
@@ -268,7 +301,7 @@ export function CommandCenter() {
                 }
               }}
               aria-label="AI 업무 채팅 입력"
-              placeholder="예: 이번 달 매출 보고서 만들어서 내 메일로 보내줘"
+              placeholder="예: 이번 달 매출 보고서 만들어서 내 메일로 보내줘 (Shift+Enter로 줄바꿈)"
             />
             <button
               className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary text-white hover:bg-primary-active disabled:cursor-not-allowed disabled:opacity-60"
@@ -277,31 +310,15 @@ export function CommandCenter() {
               type="button"
               aria-label="메시지 보내기"
             >
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" aria-hidden="true" />}
             </button>
           </div>
-          {error ? <p className="mt-3 text-sm font-semibold text-primary-active">{error}</p> : null}
+          {error ? (
+            <p role="alert" aria-live="assertive" className="mt-3 text-sm font-semibold text-red-500">{error}</p>
+          ) : null}
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {examples.map((example) => (
-          <button
-            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface-card px-4 text-sm font-medium text-body hover:text-primary"
-            key={example}
-            onClick={() => void submitChat(example)}
-            type="button"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            {example}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-6 space-y-4">
-        {plan ? <PlanCard isExecuting={isExecuting} onExecute={() => void executePlan()} plan={plan} /> : null}
-        {run ? <ResultCard run={run} /> : null}
-      </div>
     </section>
   );
 }

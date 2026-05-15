@@ -27,6 +27,7 @@ function ApprovalsContent() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [processingDecision, setProcessingDecision] = useState<"APPROVED" | "REJECTED" | null>(null);
   const [approvalPage, setApprovalPage] = useState(1);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   const { data, isError, isLoading } = useQuery({
     queryKey: ["approvals"],
@@ -57,12 +58,22 @@ function ApprovalsContent() {
       }
       return rejectApproval(approval.id);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      setLocalDecisions((current) => ({ ...current, [variables.approval.id]: variables.decision }));
+      setMutationError(null);
       queryClient.invalidateQueries({ queryKey: ["approvals"] });
       queryClient.invalidateQueries({ queryKey: ["workflow-runs"] });
     },
-    onError: (_error, variables) => {
-      setLocalDecisions((current) => ({ ...current, [variables.approval.id]: variables.decision }));
+    onError: (error, variables) => {
+      const label = variables.decision === "APPROVED" ? "승인" : "반려";
+      const message = error instanceof Error ? error.message : "알 수 없는 오류";
+      if (isError) {
+        // 데모 모드: 백엔드 미연결 상태이므로 로컬에서 반영
+        setLocalDecisions((current) => ({ ...current, [variables.approval.id]: variables.decision }));
+        setMutationError(null);
+      } else {
+        setMutationError(`${label} 처리에 실패했습니다. (${message})`);
+      }
     },
     onSettled: () => {
       setProcessingId(null);
@@ -71,6 +82,7 @@ function ApprovalsContent() {
   });
 
   function handleDecide(approval: ApprovalItem, decision: "APPROVED" | "REJECTED") {
+    setMutationError(null);
     setProcessingId(approval.id);
     setProcessingDecision(decision);
     decide.mutate({ approval, decision });
@@ -82,6 +94,8 @@ function ApprovalsContent() {
     }
   }, [highlightRunId]);
 
+  const connectionLabel = isLoading ? "조회 중" : isError ? "오류" : "연결됨";
+
   return (
     <AppShell>
       <div className="mx-auto max-w-[1200px] px-5 py-8 md:px-8">
@@ -91,9 +105,20 @@ function ApprovalsContent() {
           description="외부 발송, 구매팀 알림, 대량 고객 안내처럼 실제 업무 영향이 큰 단계는 승인함에서 통제합니다."
         />
         <div className="mt-4 flex items-center gap-2 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-          <span className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`} />
+          <span
+            role="status"
+            aria-live="polite"
+            aria-label={`백엔드 연결 상태: ${connectionLabel}`}
+            className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`}
+          />
           {isLoading ? "승인 목록 조회 중..." : isError ? "백엔드 미연결 — 데모 승인 표시 중" : "백엔드 연결됨"}
         </div>
+
+        {mutationError ? (
+          <div role="alert" aria-live="assertive" className="mt-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm font-medium text-red-500">
+            {mutationError}
+          </div>
+        ) : null}
 
         <div className="mt-8 grid gap-4">
           {pagedApprovals.map((approval) => {
@@ -102,31 +127,38 @@ function ApprovalsContent() {
             const isPending = approval.status === "PENDING";
             const isApproved = approval.status === "APPROVED";
             const isRejected = approval.status === "REJECTED";
+            const cardTitle = workflowTitleLabel(approval.runId);
 
             return (
               <section
                 ref={isHighlighted ? highlightRef : null}
+                aria-label={`승인 항목: ${cardTitle} (${statusLabel(approval.status)})`}
                 className={`rounded-xl bg-surface-dark p-6 text-canvas ${isHighlighted ? "ring-2 ring-primary" : ""}`}
                 key={approval.id}
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className={`text-sm font-semibold ${isApproved ? "text-green-400" : isRejected ? "text-red-400" : "text-amber"}`}>
-                      {isApproved ? "✓ 승인됨" : isRejected ? "✗ 반려됨" : statusLabel(approval.status)}
+                    <p className={`text-sm font-semibold ${isApproved ? "text-success" : isRejected ? "text-red-400" : "text-amber"}`}>
+                      {isApproved ? (
+                        <><span aria-hidden="true">✓ </span><span className="sr-only">승인됨 — </span>승인됨</>
+                      ) : isRejected ? (
+                        <><span aria-hidden="true">✗ </span><span className="sr-only">반려됨 — </span>반려됨</>
+                      ) : statusLabel(approval.status)}
                     </p>
-                    <h2 className="display-title mt-2 text-3xl">{workflowTitleLabel("Low Inventory Purchasing Alert")}</h2>
-                    <p className="mt-3 max-w-2xl text-sm leading-6 text-[#a09d96]">{approval.reason}</p>
-                    <p className="mt-3 font-mono text-xs text-[#a09d96]">
-                      {approval.id} · 요청 에이전트 {agentLabel(approval.requestedByAgent)}
+                    <h2 className="mt-2 text-xl font-semibold text-canvas">{cardTitle}</h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-body line-clamp-3">{approval.reason}</p>
+                    <p className="mt-3 font-mono text-xs text-muted">
+                      요청 에이전트: {agentLabel(approval.requestedByAgent)}
                     </p>
                   </div>
 
                   {isPending ? (
                     <div className="flex gap-2">
                       <button
-                        className="inline-flex h-10 items-center gap-2 rounded-md bg-surface-dark-elevated px-4 text-sm font-medium text-canvas disabled:opacity-50"
+                        className="inline-flex h-11 items-center gap-2 rounded-md bg-surface-dark-elevated px-4 text-sm font-medium text-canvas disabled:opacity-50"
                         disabled={isProcessing}
                         onClick={() => handleDecide(approval, "REJECTED")}
+                        aria-label={`${cardTitle} 반려`}
                         type="button"
                       >
                         {isProcessing && processingDecision === "REJECTED" ? (
@@ -135,9 +167,10 @@ function ApprovalsContent() {
                         반려
                       </button>
                       <button
-                        className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-white disabled:opacity-50"
+                        className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-white disabled:opacity-50"
                         disabled={isProcessing}
                         onClick={() => handleDecide(approval, "APPROVED")}
+                        aria-label={`${cardTitle} 승인`}
                         type="button"
                       >
                         {isProcessing && processingDecision === "APPROVED" ? (
@@ -147,40 +180,41 @@ function ApprovalsContent() {
                       </button>
                     </div>
                   ) : (
-                    <span className={`rounded-full px-4 py-2 text-sm font-semibold ${isApproved ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>
+                    <span className={`rounded-full px-4 py-2 text-sm font-semibold ${isApproved ? "bg-success/20 text-success" : "bg-red-500/20 text-red-300"}`}>
                       {isApproved ? "승인 완료" : "반려 완료"}
                     </span>
                   )}
                 </div>
 
-                <div className="mt-5 overflow-x-auto rounded-lg border border-white/10 bg-surface-dark-elevated">
-                  <div className="border-b border-white/10 px-4 py-3">
-                    <p className="text-sm font-semibold text-canvas">승인 판단 자료</p>
-                    <p className="mt-1 text-xs text-[#a09d96]">재고 현황과 재주문 기준을 비교해 구매팀 전송 전 사람 승인을 요청했습니다.</p>
-                  </div>
-                  <table className="min-w-full text-sm">
-                    <thead className="text-[#a09d96]">
-                      <tr>
-                        <th className="px-3 py-2 text-left">SKU</th>
-                        <th className="px-3 py-2 text-left">품목</th>
-                        <th className="px-3 py-2 text-right">현재 재고</th>
-                        <th className="px-3 py-2 text-right">재주문 기준</th>
-                        <th className="px-3 py-2 text-right">권장 발주</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10">
-                      {approvalEvidenceRows.map((row) => (
-                        <tr key={row[0]}>
-                          <td className="px-3 py-2 font-mono text-xs text-canvas">{row[0]}</td>
-                          <td className="px-3 py-2 text-canvas">{row[1]}</td>
-                          <td className="px-3 py-2 text-right text-canvas">{row[2]}</td>
-                          <td className="px-3 py-2 text-right text-canvas">{row[3]}</td>
-                          <td className="px-3 py-2 text-right font-semibold text-amber">{row[4]}</td>
+                {isPending ? (
+                  <div className="mt-5 overflow-x-auto rounded-lg border border-white/10 bg-surface-dark-elevated">
+                    <div className="border-b border-white/10 px-4 py-3">
+                      <p className="text-sm font-semibold text-canvas">승인 판단 자료</p>
+                    </div>
+                    <table className="min-w-full text-sm" aria-label="승인 판단 자료: SKU별 재고 현황">
+                      <thead className="text-muted">
+                        <tr>
+                          <th scope="col" className="px-3 py-2 text-left">SKU</th>
+                          <th scope="col" className="px-3 py-2 text-left">품목</th>
+                          <th scope="col" className="px-3 py-2 text-right">현재 재고</th>
+                          <th scope="col" className="px-3 py-2 text-right">재주문 기준</th>
+                          <th scope="col" className="px-3 py-2 text-right">권장 발주</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {approvalEvidenceRows.map((row) => (
+                          <tr key={row[0]}>
+                            <td className="px-3 py-2 font-mono text-xs text-canvas">{row[0]}</td>
+                            <td className="px-3 py-2 text-canvas">{row[1]}</td>
+                            <td className="px-3 py-2 text-right text-canvas">{row[2]}</td>
+                            <td className="px-3 py-2 text-right text-canvas">{row[3]}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-amber">{row[4]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
               </section>
             );
           })}

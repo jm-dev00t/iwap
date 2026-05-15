@@ -4,6 +4,10 @@ const workflowTitleLabels: Record<string, string> = {
   "New Customer Onboarding": "신규 고객 온보딩 자동화",
   "Weekly Sales Performance Report": "주간 영업 리포트 생성",
   "Untitled Workflow": "제목 없는 워크플로",
+  "demo-low-inventory": "재고 부족 구매팀 알림",
+  "demo-monthly-sales": "월간 매출 보고서 자동화",
+  "demo-weekly-sales": "주간 영업 리포트 생성",
+  "demo-customer-onboarding": "신규 고객 온보딩 자동화",
 };
 
 const statusLabels: Record<string, string> = {

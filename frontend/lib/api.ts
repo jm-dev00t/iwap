@@ -292,7 +292,7 @@ export async function approveApproval(approvalId: string): Promise<WorkflowRun> 
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ decidedBy: "manager@demo-company.com" }),
-  });
+  }, 15000);
   if (!response.ok) {
     throw new Error(`승인 API 실패: ${response.status}`);
   }
@@ -306,7 +306,7 @@ export async function rejectApproval(approvalId: string): Promise<WorkflowRun> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ decidedBy: "manager@demo-company.com" }),
-  });
+  }, 15000);
   if (!response.ok) {
     throw new Error(`승인 API 실패: ${response.status}`);
   }

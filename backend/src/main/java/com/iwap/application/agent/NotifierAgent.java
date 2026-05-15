@@ -41,7 +41,7 @@ public class NotifierAgent implements WorkflowAgent {
                 case "email" -> deliveryService.sendEmail(
                         context.requestedBy(),
                         "[IWAP] " + context.plan().title() + " 완료",
-                        context.plan().title() + " 워크플로가 완료되었습니다. IWAP 대시보드에서 보고서를 확인하세요.");
+                        buildEmailBody(context));
                 default -> deliveryService.recordKakaoWork(null,
                         context.plan().title() + " 완료 알림");
             };
@@ -57,5 +57,25 @@ public class NotifierAgent implements WorkflowAgent {
 
         String summary = succeeded + "건 발송 완료" + (failed > 0 ? ", " + failed + "건 실패" : "");
         recorder.record(context, type(), WorkflowEventType.NOTIFICATION_COMPLETED, summary);
+    }
+
+    private String buildEmailBody(WorkflowContext context) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(context.plan().title()).append(" 워크플로가 완료되었습니다.\n\n");
+
+        if (!context.artifacts().isEmpty()) {
+            context.artifacts().forEach(artifact -> {
+                sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+                sb.append("📄 ").append(artifact.title()).append("\n");
+                sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
+                sb.append(artifact.content()).append("\n\n");
+            });
+        } else {
+            sb.append("IWAP 대시보드에서 보고서를 확인하세요.\n");
+        }
+
+        sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        sb.append("이 메일은 IWAP 워크플로 자동화 시스템에서 발송되었습니다.");
+        return sb.toString();
     }
 }
