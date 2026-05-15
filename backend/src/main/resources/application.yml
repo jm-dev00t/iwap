@@ -21,6 +21,7 @@ spring:
         speech: ${IWAP_SPRING_AI_AUDIO_SPEECH_MODEL:none}
         transcription: ${IWAP_SPRING_AI_AUDIO_TRANSCRIPTION_MODEL:none}
     openai:
+      base-url: ${IWAP_OPENAI_BASE_URL:https://api.openai.com}
       api-key: ${OPENAI_API_KEY:}
       chat:
         options:
