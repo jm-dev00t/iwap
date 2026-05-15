@@ -18,7 +18,7 @@ type Report = WorkflowRun["artifacts"][number] & {
   toolCalls: WorkflowRun["toolCalls"];
 };
 
-const REPORTS_PER_PAGE = 4;
+const REPORTS_PER_PAGE = 5;
 
 function collectReports(runs: WorkflowRun[]): Report[] {
   return runs.flatMap((run) =>
@@ -610,11 +610,24 @@ export default function ReportsPage() {
     return { reports: collectReports(demoWorkflowRuns()), isFallback: true };
   }, [data]);
 
-  const scenarioReports = useMemo(() => compactReportsByScenario(reports), [reports]);
-  const totalReportPages = Math.max(1, Math.ceil(scenarioReports.length / REPORTS_PER_PAGE));
+  const sortedReports = useMemo(() =>
+    [...reports].sort((a, b) => {
+      const orderDiff = reportScenarioOrder[reportScenario(a)] - reportScenarioOrder[reportScenario(b)];
+      return orderDiff === 0 ? reportCreatedTime(b) - reportCreatedTime(a) : orderDiff;
+    }),
+  [reports]);
+
+  const scenarioCounts = useMemo(() => ({
+    monthly: reports.filter((r) => reportScenario(r) === "monthly").length,
+    weekly: reports.filter((r) => reportScenario(r) === "weekly").length,
+    customer: reports.filter((r) => reportScenario(r) === "customer").length,
+    inventory: reports.filter((r) => reportScenario(r) === "inventory").length,
+  }), [reports]);
+
+  const totalReportPages = Math.max(1, Math.ceil(sortedReports.length / REPORTS_PER_PAGE));
   const currentReportPage = Math.min(reportPage, totalReportPages);
-  const pagedReports = scenarioReports.slice((currentReportPage - 1) * REPORTS_PER_PAGE, currentReportPage * REPORTS_PER_PAGE);
-  const selectedReport = scenarioReports.find((report) => report.id === selectedReportId) ?? null;
+  const pagedReports = sortedReports.slice((currentReportPage - 1) * REPORTS_PER_PAGE, currentReportPage * REPORTS_PER_PAGE);
+  const selectedReport = sortedReports.find((report) => report.id === selectedReportId) ?? null;
 
   function openPrintableReport(report: Report) {
     const printable = window.open("", "_blank", "noopener,noreferrer,width=980,height=1200");
@@ -702,10 +715,14 @@ export default function ReportsPage() {
                   ? "백엔드 연결됨 — 실행 결과 없음, 데모 표시 중"
                   : "백엔드 연결됨"}
           </div>
-          <div className="rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-            시나리오별 대표 {scenarioReports.length}건 표시
-            {reports.length > scenarioReports.length ? ` · 누적 ${reports.length - scenarioReports.length}건 정리됨` : ""}
-          </div>
+          {(["monthly", "weekly", "customer", "inventory"] as const).map((key) => {
+            const label = { monthly: "월간 매출", weekly: "주간 실적", customer: "고객 온보딩", inventory: "재고 부족" }[key];
+            return (
+              <div className="rounded-full bg-surface-card px-4 py-2 text-sm text-body" key={key}>
+                {label} <span className="font-semibold text-ink">{scenarioCounts[key]}건</span>
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -756,29 +773,30 @@ export default function ReportsPage() {
               ))}
             </div>
 
-            {totalReportPages > 1 ? (
-              <div className="mt-4 flex items-center justify-between rounded-lg border border-hairline bg-surface-card px-3 py-2">
+            <div className="mt-4 flex items-center justify-between text-sm text-muted">
+              <span>전체 {sortedReports.length}건 중 {(currentReportPage - 1) * REPORTS_PER_PAGE + 1}–{Math.min(currentReportPage * REPORTS_PER_PAGE, sortedReports.length)} 표시</span>
+              <div className="flex items-center gap-3">
                 <button
-                  className="rounded-md px-3 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={currentReportPage === 1}
-                  onClick={() => setReportPage((page) => Math.max(1, page - 1))}
+                  onClick={() => setReportPage((p) => Math.max(1, p - 1))}
                   type="button"
                 >
+                  <ChevronLeft className="h-4 w-4" />
                   이전
                 </button>
-                <span className="text-sm text-muted">
-                  {currentReportPage} / {totalReportPages}
-                </span>
+                <span className="font-medium text-ink">{currentReportPage} / {totalReportPages}</span>
                 <button
-                  className="rounded-md px-3 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
                   disabled={currentReportPage === totalReportPages}
-                  onClick={() => setReportPage((page) => Math.min(totalReportPages, page + 1))}
+                  onClick={() => setReportPage((p) => Math.min(totalReportPages, p + 1))}
                   type="button"
                 >
                   다음
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-            ) : null}
+            </div>
           </div>
 
           <aside className="rounded-xl border border-hairline bg-surface-plain p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-auto">
