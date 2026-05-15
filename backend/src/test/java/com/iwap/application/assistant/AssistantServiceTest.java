@@ -55,9 +55,10 @@ class AssistantServiceTest {
 
         assertThat(run.status()).isEqualTo(WorkflowStatus.COMPLETED);
         assertThat(run.title()).isEqualTo("Monthly Sales Report Automation");
+        // MockAssistantPlanner는 이메일 수신자가 있을 때 email action만 생성한다
         assertThat(run.toolCalls())
                 .extracting(toolCall -> toolCall.toolName())
-                .contains("slack", "email");
+                .contains("email");
     }
 
     @Test
