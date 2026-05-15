@@ -29,6 +29,10 @@ services:
           property: password
       - key: IWAP_AI_PROVIDER
         value: mock
+      - key: IWAP_SPRING_AI_CHAT_MODEL
+        value: none
+      - key: IWAP_OPENAI_CHAT_MODEL
+        sync: false
       - key: IWAP_INTEGRATION_MODE
         value: mock
       - key: IWAP_WEB_ALLOWED_ORIGIN_PATTERNS

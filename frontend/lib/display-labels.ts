@@ -60,6 +60,7 @@ const toolLabels: Record<string, string> = {
   inventory: "재고 시스템",
   kakao: "카카오워크",
   kakaowork: "카카오워크",
+  approval: "승인 요청",
   notification: "담당자 알림",
   "activity-data": "영업 활동 데이터",
   "pdf-generator": "PDF 생성기",

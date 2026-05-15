@@ -4,7 +4,7 @@ IWAP는 로컬 Docker Compose 실행과 외부 포트폴리오 배포를 모두 
 
 - Backend: Render Web Service + Render PostgreSQL
 - Frontend: Vercel Next.js
-- Mode: `mock` AI/provider 모드로 비용 없이 안정적인 데모 운영
+- Mode: 기본은 `mock` AI/provider 모드입니다. `openai`와 `real` 모드를 켜면 LLM 플래너와 실제 Email/Slack 발송을 사용할 수 있습니다.
 
 ## 로컬 Docker Compose
 
@@ -38,8 +38,35 @@ docker compose ps
 | `IWAP_AI_PROVIDER` | `mock` 또는 실제 AI provider |
 | `IWAP_INTEGRATION_MODE` | `mock` 또는 실제 tool adapter 모드 |
 | `OPENAI_API_KEY` | 실제 AI provider 사용 시 필요 |
+| `IWAP_SPRING_AI_CHAT_MODEL` | OpenAI 사용 시 `openai` |
+| `IWAP_OPENAI_CHAT_MODEL` | 사용할 OpenAI chat model 이름 |
 | `SLACK_BOT_TOKEN` | 실제 Slack 발송 사용 시 필요 |
+| `SLACK_DEFAULT_CHANNEL` | 기본 Slack 발송 채널 |
 | `SMTP_HOST` | 실제 Email 발송 사용 시 필요 |
+| `SMTP_PORT` | SMTP 포트. 기본 587 |
+| `SMTP_USERNAME` | SMTP 계정 |
+| `SMTP_PASSWORD` | SMTP 비밀번호 |
+
+LLM 챗봇 모드 예시:
+
+```text
+IWAP_AI_PROVIDER=openai
+IWAP_SPRING_AI_CHAT_MODEL=openai
+IWAP_OPENAI_CHAT_MODEL=<사용할 OpenAI 모델명>
+OPENAI_API_KEY=<OpenAI API key>
+```
+
+실제 발송 모드 예시:
+
+```text
+IWAP_INTEGRATION_MODE=real
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=report@example.com
+SMTP_PASSWORD=<password>
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_DEFAULT_CHANNEL=#sales-report
+```
 
 ## Render Backend 배포
 
@@ -125,20 +152,19 @@ $manager = Invoke-RestMethod "$api/api/auth/demo-login" `
 $headers = @{ Authorization = "Bearer $($manager.accessToken)" }
 Invoke-RestMethod "$api/api/tools" -Headers $headers
 
-$monthly = Invoke-RestMethod "$api/api/workflows/runs" `
+$chat = Invoke-RestMethod "$api/api/assistant/chat" `
   -Method Post `
   -Headers $headers `
   -ContentType "application/json" `
-  -Body '{"command":"이번 달 매출 보고서를 만들고 Slack 채널과 이메일로 공유해줘","scenarioKey":"monthly-sales-report","requestedBy":"manager@demo-company.com"}'
+  -Body '{"message":"이번 달 매출 보고서를 만들어서 manager@demo-company.com으로 보내줘"}'
 
-$inventory = Invoke-RestMethod "$api/api/workflows/runs" `
+$run = Invoke-RestMethod "$api/api/assistant/plans/$($chat.plan.id)/execute" `
   -Method Post `
   -Headers $headers `
   -ContentType "application/json" `
-  -Body '{"command":"재고 부족 제품 리스트를 뽑아서 구매팀 카카오워크로 보내줘","scenarioKey":"low-inventory","requestedBy":"operator@demo-company.com"}'
+  -Body '{"approved":true}'
 
-$monthly.id
-$inventory.id
+$run.id
 ```
 
 Frontend:
@@ -150,7 +176,8 @@ https://<your-vercel-project>.vercel.app
 프론트엔드 확인:
 
 - 데모 로그인이 완료되어 워크플로 생성 요청에 Bearer token이 붙는지 확인합니다.
-- 첫 화면의 `워크플로 실행` 버튼으로 월간 매출 보고서와 재고 부족 알림 시나리오를 실행합니다.
+- 첫 화면의 AI 업무 채팅에 자연어 업무를 입력하고, AI 실행 계획 카드가 뜨는지 확인합니다.
+- `승인하고 실행` 버튼 또는 채팅의 “응 실행해”로 워크플로가 실행되는지 확인합니다.
 - `승인함` 화면에서 승인/반려 버튼을 눌러 상태가 바뀌는지 확인합니다.
 - `워크플로 대시보드`에서 이벤트 수, 도구 호출 수, 감사 로그 수가 표시되는지 확인합니다.
 - 브라우저 개발자 도구 Network에서 `wss://<render-backend-url>/ws/workflows` 연결과 타임라인 이벤트 수신을 확인합니다.
