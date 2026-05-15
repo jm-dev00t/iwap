@@ -146,10 +146,11 @@ export function CommandCenter() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   function addMessage(role: ChatMessage["role"], text: string) {
@@ -226,7 +227,7 @@ export function CommandCenter() {
           <p className="mt-1 text-sm text-muted">업무 지시, 추가 정보 질문, 실행 계획 확인, 결과 확인이 한 흐름으로 이어집니다.</p>
         </div>
 
-        <div className="max-h-[380px] space-y-4 overflow-y-auto px-4 py-5">
+        <div className="max-h-[380px] space-y-4 overflow-y-auto px-4 py-5" ref={chatContainerRef}>
           {messages.map((message) => {
             const isUser = message.role === "user";
             const Icon = isUser ? UserRound : Bot;
@@ -252,7 +253,6 @@ export function CommandCenter() {
               </div>
             );
           })}
-          <div ref={chatEndRef} />
         </div>
 
         <div className="border-t border-hairline bg-surface-plain p-3">
