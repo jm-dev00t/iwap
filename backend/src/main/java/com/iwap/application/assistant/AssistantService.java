@@ -59,12 +59,13 @@ public class AssistantService {
             );
         }
 
-        sessionStore.save(session.withPendingCommand(null));
+        AssistantSession cleanSession = session.withPendingCommand(null);
+        sessionStore.save(cleanSession);
         AssistantPlan plan = planStore.save(draft.withIdentity("plan-" + UUID.randomUUID(), session.id()));
         String assistantReply = plan.requiresApproval()
                 ? "실행 계획을 만들었습니다. 외부 발송이 포함되어 있어 실행 전 확인이 필요합니다."
                 : "실행 계획을 만들었습니다. 확인 후 실행할 수 있습니다.";
-        sessionStore.save(session.withPendingPlan(plan.id())
+        sessionStore.save(cleanSession.withPendingPlan(plan.id())
                 .withMessage("user", request.message())
                 .withMessage("assistant", assistantReply));
         return new AssistantChatResponse(
