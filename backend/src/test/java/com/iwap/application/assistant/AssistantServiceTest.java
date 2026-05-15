@@ -53,12 +53,9 @@ class AssistantServiceTest {
 
         WorkflowRun run = assistant.execute(first.plan().id(), new AssistantPlanExecutionRequest(true));
 
-        assertThat(run.status()).isEqualTo(WorkflowStatus.COMPLETED);
+        // 외부 발송(email)이 포함된 플랜은 오케스트레이터 승인 대기 상태로 전환된다
+        assertThat(run.status()).isEqualTo(WorkflowStatus.WAITING_FOR_APPROVAL);
         assertThat(run.title()).isEqualTo("Monthly Sales Report Automation");
-        // MockAssistantPlanner는 이메일 수신자가 있을 때 email action만 생성한다
-        assertThat(run.toolCalls())
-                .extracting(toolCall -> toolCall.toolName())
-                .contains("email");
     }
 
     @Test
@@ -80,7 +77,9 @@ class AssistantServiceTest {
 
         assertThat(response.state()).isEqualTo(AssistantState.EXECUTED);
         assertThat(response.run()).isNotNull();
-        assertThat(response.run().status()).isEqualTo(WorkflowStatus.COMPLETED);
+        // 외부 발송 포함 플랜은 사람 승인 대기 상태로 전환된다
+        assertThat(response.run().status()).isEqualTo(WorkflowStatus.WAITING_FOR_APPROVAL);
+        assertThat(response.assistantMessage()).contains("승인");
     }
 
     @Test

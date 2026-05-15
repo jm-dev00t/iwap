@@ -42,9 +42,13 @@ public class AssistantService {
         if (session.pendingPlanId() != null && isAffirmativeExecution(request.message())) {
             WorkflowRun run = execute(session.pendingPlanId(), new AssistantPlanExecutionRequest(true));
             sessionStore.save(session.clearPendingPlan());
+            boolean waitingApproval = com.iwap.domain.workflow.WorkflowStatus.WAITING_FOR_APPROVAL.equals(run.status());
+            String executedReply = waitingApproval
+                    ? run.title() + " 실행을 시작했습니다. 외부 발송 전 승인함에서 승인이 필요합니다."
+                    : run.title() + " 실행을 완료했습니다. 보고서와 발송 상태를 확인할 수 있습니다.";
             return new AssistantChatResponse(
                     session.id(),
-                    run.title() + " 실행을 완료했습니다. 보고서와 발송 상태를 확인할 수 있습니다.",
+                    executedReply,
                     AssistantState.EXECUTED,
                     null,
                     List.of(),
@@ -115,9 +119,7 @@ public class AssistantService {
     }
 
     private WorkflowPlan toWorkflowPlan(AssistantPlan plan) {
-        // "approval" 액션은 오케스트레이터 레벨 승인 요청을 의미하므로 step에서 제외
-        boolean needsOrchestratorApproval = plan.actions().stream()
-                .anyMatch(a -> "approval".equals(a.toolName()));
+        // "approval" 의사 액션은 실행 step이 아니므로 제외. 승인 여부는 plan.requiresApproval()로 판단
         List<WorkflowStep> steps = plan.actions().stream()
                 .filter(a -> !"approval".equals(a.toolName()))
                 .map(a -> new WorkflowStep(a.order(), agentTypeFor(a.toolName()), a.title(), a.description(), a.toolName()))
@@ -126,7 +128,7 @@ public class AssistantService {
                 .filter(s -> s.key().equals(plan.scenarioKey()))
                 .findFirst()
                 .orElse(WorkflowScenario.MONTHLY_SALES_REPORT);
-        return new WorkflowPlan(scenario, scenario.title(), needsOrchestratorApproval, plan.approvalReason(), steps);
+        return new WorkflowPlan(scenario, scenario.title(), plan.requiresApproval(), plan.approvalReason(), steps);
     }
 
     private AgentType agentTypeFor(String toolName) {

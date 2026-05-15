@@ -74,26 +74,67 @@ IWAP은 따뜻한 엔터프라이즈 콘솔 스타일을 지향합니다. 크림
 
 상세 시나리오는 [docs/demo-scenarios.md](</D:/work/iwap/docs/demo-scenarios.md>)에 있습니다.
 
+## LLM 플래너
+
+현재 **Groq API (llama-3.3-70b-versatile)** 를 LLM 플래너로 사용합니다. Spring AI의 OpenAI 호환 엔드포인트를 통해 연결하므로 `IWAP_AI_PROVIDER=openai` 설정으로 활성화됩니다.
+
+```env
+IWAP_AI_PROVIDER=openai
+IWAP_SPRING_AI_CHAT_MODEL=openai
+OPENAI_API_KEY=<Groq API 키>
+IWAP_OPENAI_API_BASE_URL=https://api.groq.com/openai/v1
+IWAP_OPENAI_CHAT_MODEL=llama-3.3-70b-versatile
+```
+
+LLM이 없거나 `IWAP_AI_PROVIDER=mock`이면 결정론적 Mock 플래너가 동작합니다.
+
+LLM 플래너는 사용자 자연어 명령을 파싱해 다음을 결정합니다.
+
+- 시나리오 키 (`scenarioKey`): monthly-sales-report, weekly-sales-report, customer-onboarding, low-inventory
+- 실행 액션 목록 (`actions`): toolName, 순서, 설명
+- 필수 정보 누락 여부 (`missingFields`): 예) 이메일 주소 없이 메일 발송 요청
+- 외부 발송 포함 여부 (`requiresApproval`): email·slack·kakao 액션이 있으면 true
+
+## 승인 흐름
+
+외부 발송이 포함된 워크플로는 반드시 사람 승인 후 실행됩니다.
+
+```
+사용자 채팅 명령
+  → LLM 계획 생성 (requiresApproval=true 포함)
+  → PLAN_READY 상태 반환 — 사용자가 채팅에서 실행 확인
+  → AssistantService.execute() — 채팅 레벨 승인(의도 확인)
+  → WorkflowOrchestrator.startWithPlan() — requiresApproval=true이면 WAITING_FOR_APPROVAL 전환
+  → 승인함(/approvals)에서 관리자 승인 또는 반려
+  → 승인 시 파이프라인 재개 → Executor → Reporter → Notifier(외부 발송)
+```
+
+| 시나리오 | 승인 필요 | 이유 |
+|----------|-----------|------|
+| 월간 매출 보고서 | 예 (email/slack 포함) | 외부 발송 |
+| 주간 영업 리포트 | 예 (email 포함) | 외부 발송 |
+| 신규 고객 온보딩 | 예 (email/slack 포함) | 외부 발송 |
+| 재고 부족 알림 | 예 (kakao 포함) | 외부 발송 |
+
 ## 현재 구현 범위
 
-현재 버전은 챗봇형 업무 자동화 데모입니다. OpenAI 키가 있으면 LLM 플래너가 자연어 업무를 구조화하고, 키가 없으면 동일한 API 계약의 데모 플래너가 안전하게 동작합니다.
-
-- AI Assistant 채팅 API: 자연어 입력, 부족 정보 질문, 실행 계획 생성, 승인 후 실행
-- OpenAI/Spring AI 기반 planner boundary와 mock planner fallback
-- 월간 매출 보고서 완료 플로우
-- 신규 고객 온보딩 완료 플로우
-- 재고 부족 승인 대기 플로우
-- 주간 영업 리포트 완료 플로우
-- 이메일/슬랙 실제 발송 adapter boundary와 데모 발송함 기록
+- AI Assistant 채팅 API: 자연어 입력, 부족 정보 질문, LLM 계획 생성, 승인 후 실행
+- LLM 플래너 (Groq/llama-3.3-70b) + Mock 플래너 전환 (`IWAP_AI_PROVIDER`)
+- LLM 계획 → WorkflowPlan 직접 변환 — LLM이 생성한 actions가 실행에 100% 반영
+- 멀티턴 대화 — 이전 대화 맥락을 LLM에 전달, 누락 정보 추가 수집
+- Human-in-the-Loop 승인 — 외부 발송 시 승인함 대기, 이중 실행 방지
+- 5-Agent 파이프라인: Planner → Executor → Validator → Reporter → Notifier
+- Gmail SMTP 실제 이메일 발송 (`IWAP_INTEGRATION_MODE=real`)
+- Slack Webhook 연동
+- Markdown 보고서 산출물 생성 및 보고서 페이지 표시
 - Demo JWT 로그인과 상태 변경 API 보호
-- 승인/반려 API와 중복 결정 방지
-- 프론트엔드 Command Center에서 챗봇 대화, 계획 확인, 실행 결과 확인
-- 워크플로, 이벤트, 툴 호출, 승인 요청, 감사 로그, 메모리 DB 스키마
-- PGVector 기반 메모리 테이블 준비
-- Docker Compose 기반 로컬 실행
-- 배포 전 테스트 시나리오와 seed 데이터
+- 승인/반려 API와 중복 결정 방지 (409 Conflict)
+- WebSocket/STOMP 실시간 워크플로 이벤트 스트림
+- PostgreSQL 16 + PGVector 메모리 테이블
+- Flyway 마이그레이션 + Seed 데이터
+- Docker Compose 원커맨드 로컬 실행
 
-`IWAP_INTEGRATION_MODE=mock`이면 외부 발송은 데모 발송함 기록으로 남습니다. `real` 모드에서 SMTP/Slack 값이 있으면 이메일과 Slack 실제 발송을 시도하고, 값이 없거나 실패하면 도구 호출 결과에 실패/데모 상태를 기록합니다.
+`IWAP_INTEGRATION_MODE=mock`이면 외부 발송은 데모 발송함 기록으로 남습니다. `real` 모드에서 SMTP/Slack 값이 있으면 실제 발송을 시도하고, 없거나 실패하면 도구 호출 결과에 실패 상태를 기록합니다.
 
 ## 로컬 실행
 
@@ -123,29 +164,38 @@ docker compose up -d --build
 
 주요 값:
 
-- `IWAP_FRONTEND_PORT=3000`
-- `IWAP_BACKEND_PORT=8080`
-- `IWAP_POSTGRES_PORT=5432`
-- `IWAP_AI_PROVIDER=mock`
-- `IWAP_INTEGRATION_MODE=mock`
-- `IWAP_OPENAI_CHAT_MODEL=`
-- `IWAP_ALLOWED_ORIGINS=http://localhost:3000`
-- `NEXT_PUBLIC_IWAP_API_BASE_URL=http://localhost:8080`
-- `NEXT_PUBLIC_IWAP_WS_URL=http://localhost:8080/ws/workflows`
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `IWAP_FRONTEND_PORT` | `3000` | 프론트엔드 포트 |
+| `IWAP_BACKEND_PORT` | `8080` | 백엔드 포트 |
+| `IWAP_POSTGRES_PORT` | `5432` | DB 포트 |
+| `IWAP_AI_PROVIDER` | `mock` | `mock` \| `openai` (Groq 포함) |
+| `IWAP_INTEGRATION_MODE` | `mock` | `mock` \| `real` |
+| `IWAP_ALLOWED_ORIGINS` | `http://localhost:3000` | CORS 허용 오리진 |
+| `NEXT_PUBLIC_IWAP_API_BASE_URL` | `http://localhost:8080` | 프론트 → 백엔드 주소 |
+| `NEXT_PUBLIC_IWAP_WS_URL` | `http://localhost:8080/ws/workflows` | WebSocket 주소 |
 
-실제 외부 연동을 추가할 때 필요한 후보:
+Groq LLM 활성화:
 
-- `OPENAI_API_KEY`
-- `IWAP_AI_PROVIDER=openai`
-- `IWAP_SPRING_AI_CHAT_MODEL=openai`
-- `IWAP_OPENAI_CHAT_MODEL`
-- `IWAP_INTEGRATION_MODE=real`
-- `SLACK_BOT_TOKEN`
-- `SLACK_DEFAULT_CHANNEL`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_USERNAME`
-- `SMTP_PASSWORD`
+```env
+IWAP_AI_PROVIDER=openai
+IWAP_SPRING_AI_CHAT_MODEL=openai
+OPENAI_API_KEY=<Groq API 키>
+IWAP_OPENAI_API_BASE_URL=https://api.groq.com/openai/v1
+IWAP_OPENAI_CHAT_MODEL=llama-3.3-70b-versatile
+```
+
+실제 외부 발송 활성화:
+
+```env
+IWAP_INTEGRATION_MODE=real
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=<Gmail 주소>
+SMTP_PASSWORD=<앱 비밀번호>
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_DEFAULT_CHANNEL=#general
+```
 
 ## 샘플 데이터
 
@@ -293,11 +343,12 @@ docker compose exec -T postgres psql -U iwap -d iwap -c "SELECT status, count(*)
 
 ## 현재 주의할 점
 
-- `GET /api/workflows/runs`는 현재 서버 메모리 저장소 기준의 실행 이력을 반환합니다. 컨테이너 재시작 후에도 유지되는 영속 히스토리 화면은 다음 단계 범위입니다.
-- 승인/반려 API는 구현되어 있으며, 이미 승인 또는 반려된 요청을 다시 처리하면 `409 Conflict`를 반환합니다.
-- 워크플로 생성, 승인, 반려 같은 상태 변경 API는 Demo JWT 인증이 필요합니다.
-- Slack, Email, KakaoWork, CRM은 실제 외부 API 호출이 아니라 mock/demo adapter 스토리입니다.
-- OpenAI API 키 없이도 데모는 동작합니다.
+- `GET /api/workflows/runs`는 서버 메모리 저장소 기준의 실행 이력을 반환합니다. 컨테이너 재시작 시 초기화됩니다.
+- 승인/반려 API는 구현되어 있으며, 이미 처리된 요청을 다시 변경하면 `409 Conflict`를 반환합니다.
+- 워크플로 생성·승인·반려 같은 상태 변경 API는 Demo JWT 인증이 필요합니다.
+- `IWAP_INTEGRATION_MODE=mock`이면 Email, Slack, Kakao는 실제 발송 없이 결과만 기록합니다.
+- Groq API 키 없이도 `IWAP_AI_PROVIDER=mock`으로 데모가 동작합니다.
+- 외부 발송이 포함된 시나리오는 채팅에서 실행 확인 후에도 승인함 대기 상태(`WAITING_FOR_APPROVAL`)가 됩니다. 승인함에서 승인해야 실제 발송이 진행됩니다.
 
 ## 엔터프라이즈 연동 방향
 
@@ -401,3 +452,5 @@ curl.exe -I http://localhost:3000
 | LLM 계획→실행 직접 반영 (AssistantPlan→WorkflowPlan 변환) | ✅ 완료 | 2026-05-16 |
 | 대화 히스토리 버그 수정 (assistant 메시지 포함) | ✅ 완료 | 2026-05-16 |
 | slots 이메일 수신자 실행까지 전달 | ✅ 완료 | 2026-05-16 |
+| low-inventory 승인 우회 버그 수정 (LLM·Mock 공통) | ✅ 완료 | 2026-05-16 |
+| README LLM 플래너(Groq) + 승인 흐름 현행화 | ✅ 완료 | 2026-05-16 |
