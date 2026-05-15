@@ -214,11 +214,11 @@ export function CommandCenter() {
   return (
     <section className="rounded-xl border border-hairline bg-surface-plain p-6">
       <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">AI Workflow Assistant</p>
-      <h1 className="display-title mt-3 max-w-2xl text-5xl leading-tight md:text-6xl">
-        자연어 업무를 실행 가능한 계획으로 바꿉니다
+      <h1 className="mt-2 text-2xl font-semibold text-ink md:text-3xl">
+        업무를 말하면 AI가 계획을 세우고 실행합니다
       </h1>
-      <p className="mt-5 max-w-2xl text-base leading-7 text-body">
-        OpenAI 연결 시 LLM이 업무 의도와 필요한 도구를 판단합니다. 키가 없으면 데모 플래너로 동작하고, 외부 발송은 실행 전 승인받습니다.
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-body">
+        Groq LLM이 업무 의도를 분석해 실행 계획을 수립합니다. 외부 발송이 포함된 경우 실행 전 승인을 요청합니다.
       </p>
 
       <div className="mt-8 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-soft">
