@@ -2,7 +2,8 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PageHeading } from "@/components/page-heading";
 import { demoWorkflowRuns, listWorkflowRuns } from "@/lib/api";
@@ -10,8 +11,11 @@ import { statusLabel, workflowTitleLabel } from "@/lib/display-labels";
 
 const PAGE_SIZE = 10;
 
-export default function WorkflowsPage() {
+function WorkflowsContent() {
   const [page, setPage] = useState(1);
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("id");
+  const highlightRef = useRef<HTMLElement>(null);
 
   const { data, isError, isLoading } = useQuery({
     queryKey: ["workflow-runs"],
@@ -23,6 +27,12 @@ export default function WorkflowsPage() {
   const pageRows = workflows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const start = (page - 1) * PAGE_SIZE + 1;
   const end = Math.min(page * PAGE_SIZE, workflows.length);
+
+  useEffect(() => {
+    if (highlightId && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightId]);
 
   return (
     <AppShell>
@@ -38,29 +48,34 @@ export default function WorkflowsPage() {
         </div>
 
         <div className="mt-8 overflow-hidden rounded-lg border border-hairline bg-surface-plain">
-          {/* 테이블 헤더 */}
           <div className="grid border-b border-hairline bg-surface-card px-5 py-3 md:grid-cols-[1fr_auto]">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">워크플로</p>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">상태</p>
           </div>
 
-          {pageRows.map((workflow) => (
-            <article
-              className="grid items-start border-b border-hairline p-5 last:border-b-0 md:grid-cols-[1fr_auto]"
-              key={workflow.id}
-            >
-              <div>
-                <p className="text-base font-semibold text-ink">{workflowTitleLabel(workflow.title)}</p>
-                <p className="mt-1 text-sm text-body">{workflow.command}</p>
-                <p className="mt-2 text-xs text-muted">
-                  도구 호출 {workflow.toolCalls.length}건 · 이벤트 {workflow.events.length}건 · 감사 로그 {workflow.auditTrail.length}건
-                </p>
-              </div>
-              <span className="mt-1 rounded-full bg-canvas px-3 py-1 text-xs font-medium text-body">
-                {statusLabel(workflow.status)}
-              </span>
-            </article>
-          ))}
+          {pageRows.map((workflow) => {
+            const isHighlighted = workflow.id === highlightId;
+            return (
+              <article
+                ref={isHighlighted ? highlightRef : null}
+                className={`grid items-start border-b border-hairline p-5 last:border-b-0 md:grid-cols-[1fr_auto] ${
+                  isHighlighted ? "bg-primary/5 ring-2 ring-inset ring-primary/30" : ""
+                }`}
+                key={workflow.id}
+              >
+                <div>
+                  <p className="text-base font-semibold text-ink">{workflowTitleLabel(workflow.title)}</p>
+                  <p className="mt-1 text-sm text-body">{workflow.command}</p>
+                  <p className="mt-2 text-xs text-muted">
+                    도구 호출 {workflow.toolCalls.length}건 · 이벤트 {workflow.events.length}건 · 감사 로그 {workflow.auditTrail.length}건
+                  </p>
+                </div>
+                <span className="mt-1 rounded-full bg-canvas px-3 py-1 text-xs font-medium text-body">
+                  {statusLabel(workflow.status)}
+                </span>
+              </article>
+            );
+          })}
         </div>
 
         <div className="mt-4 flex items-center justify-between text-sm text-muted">
@@ -87,5 +102,13 @@ export default function WorkflowsPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+export default function WorkflowsPage() {
+  return (
+    <Suspense>
+      <WorkflowsContent />
+    </Suspense>
   );
 }

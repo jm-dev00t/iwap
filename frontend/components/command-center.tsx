@@ -108,10 +108,10 @@ function ResultCard({ run }: { run: WorkflowRun }) {
         <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href="/reports">
           보고서 확인 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
         </a>
-        <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href="/workflows">
+        <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href={`/workflows?id=${run.id}`}>
           실행 이력 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
         </a>
-        <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href="/approvals">
+        <a className="rounded-md bg-canvas p-3 text-sm font-semibold text-ink hover:text-primary" href={`/approvals?id=${run.id}`}>
           승인함 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
         </a>
       </div>

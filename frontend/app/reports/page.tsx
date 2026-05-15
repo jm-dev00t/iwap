@@ -593,9 +593,115 @@ function DeliveryStatus({ report }: { report: Report }) {
   );
 }
 
+const SCENARIO_LABELS: Record<string, string> = {
+  monthly: "월간 매출 보고서",
+  weekly: "주간 실적 보고서",
+  customer: "고객 온보딩 보고서",
+  inventory: "재고 부족 보고서",
+};
+
+function ScenarioReportGroup({
+  scenarioKey,
+  reports,
+  selectedReportId,
+  onSelect,
+  onPdf,
+}: {
+  scenarioKey: string;
+  reports: Report[];
+  selectedReportId: string | null;
+  onSelect: (id: string) => void;
+  onPdf: (report: Report) => void;
+}) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(reports.length / REPORTS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedReports = reports.slice((currentPage - 1) * REPORTS_PER_PAGE, currentPage * REPORTS_PER_PAGE);
+
+  if (reports.length === 0) return null;
+
+  return (
+    <div className="mt-6 first:mt-0">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+        {SCENARIO_LABELS[scenarioKey] ?? scenarioKey}{" "}
+        <span className="text-ink">{reports.length}건</span>
+      </p>
+      <div className="grid gap-4">
+        {pagedReports.map((report) => (
+          <article
+            className={`relative cursor-pointer rounded-xl border p-5 shadow-soft transition ${
+              selectedReportId === report.id
+                ? "border-primary bg-surface-plain ring-2 ring-primary/30"
+                : "border-hairline bg-surface-card hover:border-primary/60"
+            }`}
+            key={`${report.runId}-${report.id}`}
+            onClick={() => onSelect(report.id)}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="rounded-full bg-canvas p-2 text-primary">
+                  <FileText className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted">{formatDate(report.createdAt)}</p>
+                  <h2 className="mt-0.5 text-base font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                {selectedReportId === report.id ? (
+                  <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">선택됨</span>
+                ) : null}
+                <button
+                  className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-plain hover:text-primary"
+                  onClick={(e) => { e.stopPropagation(); onPdf(report); }}
+                  title="PDF 저장"
+                  type="button"
+                >
+                  <Download className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-body">{report.summary}</p>
+            <div className="mt-3 rounded-lg bg-surface-plain p-3">
+              <p className="text-xs font-medium text-muted">워크플로</p>
+              <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
+              <p className="mt-1 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center justify-between text-sm text-muted">
+        <span>
+          {reports.length}건 중 {(currentPage - 1) * REPORTS_PER_PAGE + 1}–{Math.min(currentPage * REPORTS_PER_PAGE, reports.length)} 표시
+        </span>
+        <div className="flex items-center gap-3">
+          <button
+            className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+            disabled={currentPage === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            type="button"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            이전
+          </button>
+          <span className="font-medium text-ink">{currentPage} / {totalPages}</span>
+          <button
+            className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+            disabled={currentPage === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            type="button"
+          >
+            다음
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ReportsPage() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [reportPage, setReportPage] = useState(1);
   const { data, isError, isLoading } = useQuery({
     queryKey: ["workflow-reports"],
     queryFn: listWorkflowRuns,
@@ -617,16 +723,20 @@ export default function ReportsPage() {
     }),
   [reports]);
 
-  const scenarioCounts = useMemo(() => ({
-    monthly: reports.filter((r) => reportScenario(r) === "monthly").length,
-    weekly: reports.filter((r) => reportScenario(r) === "weekly").length,
-    customer: reports.filter((r) => reportScenario(r) === "customer").length,
-    inventory: reports.filter((r) => reportScenario(r) === "inventory").length,
-  }), [reports]);
+  const groupedReports = useMemo(() => ({
+    monthly: sortedReports.filter((r) => reportScenario(r) === "monthly"),
+    weekly: sortedReports.filter((r) => reportScenario(r) === "weekly"),
+    customer: sortedReports.filter((r) => reportScenario(r) === "customer"),
+    inventory: sortedReports.filter((r) => reportScenario(r) === "inventory"),
+  }), [sortedReports]);
 
-  const totalReportPages = Math.max(1, Math.ceil(sortedReports.length / REPORTS_PER_PAGE));
-  const currentReportPage = Math.min(reportPage, totalReportPages);
-  const pagedReports = sortedReports.slice((currentReportPage - 1) * REPORTS_PER_PAGE, currentReportPage * REPORTS_PER_PAGE);
+  const scenarioCounts = useMemo(() => ({
+    monthly: groupedReports.monthly.length,
+    weekly: groupedReports.weekly.length,
+    customer: groupedReports.customer.length,
+    inventory: groupedReports.inventory.length,
+  }), [groupedReports]);
+
   const selectedReport = sortedReports.find((report) => report.id === selectedReportId) ?? null;
 
   function openPrintableReport(report: Report) {
@@ -727,76 +837,16 @@ export default function ReportsPage() {
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
           <div>
-            <div className="grid gap-4">
-              {pagedReports.map((report) => (
-                <article
-                  className={`relative cursor-pointer rounded-xl border p-5 shadow-soft transition ${
-                    selectedReport?.id === report.id
-                      ? "border-primary bg-surface-plain ring-2 ring-primary/30"
-                      : "border-hairline bg-surface-card hover:border-primary/60"
-                  }`}
-                  key={`${report.runId}-${report.id}`}
-                  onClick={() => setSelectedReportId(report.id)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="rounded-full bg-canvas p-2 text-primary">
-                        <FileText className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted">{formatDate(report.createdAt)}</p>
-                        <h2 className="mt-0.5 text-base font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      {selectedReport?.id === report.id ? (
-                        <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">선택됨</span>
-                      ) : null}
-                      <button
-                        className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-plain hover:text-primary"
-                        onClick={(e) => { e.stopPropagation(); openPrintableReport(report); }}
-                        title="PDF 저장"
-                        type="button"
-                      >
-                        <Download className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="mt-3 text-sm leading-6 text-body">{report.summary}</p>
-                  <div className="mt-3 rounded-lg bg-surface-plain p-3">
-                    <p className="text-xs font-medium text-muted">워크플로</p>
-                    <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
-                    <p className="mt-1 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-4 flex items-center justify-between text-sm text-muted">
-              <span>전체 {sortedReports.length}건 중 {(currentReportPage - 1) * REPORTS_PER_PAGE + 1}–{Math.min(currentReportPage * REPORTS_PER_PAGE, sortedReports.length)} 표시</span>
-              <div className="flex items-center gap-3">
-                <button
-                  className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
-                  disabled={currentReportPage === 1}
-                  onClick={() => setReportPage((p) => Math.max(1, p - 1))}
-                  type="button"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  이전
-                </button>
-                <span className="font-medium text-ink">{currentReportPage} / {totalReportPages}</span>
-                <button
-                  className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
-                  disabled={currentReportPage === totalReportPages}
-                  onClick={() => setReportPage((p) => Math.min(totalReportPages, p + 1))}
-                  type="button"
-                >
-                  다음
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            {(["monthly", "weekly", "customer", "inventory"] as const).map((key) => (
+              <ScenarioReportGroup
+                key={key}
+                scenarioKey={key}
+                reports={groupedReports[key]}
+                selectedReportId={selectedReportId}
+                onSelect={setSelectedReportId}
+                onPdf={openPrintableReport}
+              />
+            ))}
           </div>
 
           <aside className="rounded-xl border border-hairline bg-surface-plain p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-auto">
