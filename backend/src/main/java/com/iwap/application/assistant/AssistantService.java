@@ -115,16 +115,18 @@ public class AssistantService {
     }
 
     private WorkflowPlan toWorkflowPlan(AssistantPlan plan) {
+        // "approval" 액션은 오케스트레이터 레벨 승인 요청을 의미하므로 step에서 제외
+        boolean needsOrchestratorApproval = plan.actions().stream()
+                .anyMatch(a -> "approval".equals(a.toolName()));
         List<WorkflowStep> steps = plan.actions().stream()
+                .filter(a -> !"approval".equals(a.toolName()))
                 .map(a -> new WorkflowStep(a.order(), agentTypeFor(a.toolName()), a.title(), a.description(), a.toolName()))
                 .toList();
         WorkflowScenario scenario = Arrays.stream(WorkflowScenario.values())
                 .filter(s -> s.key().equals(plan.scenarioKey()))
                 .findFirst()
                 .orElse(WorkflowScenario.MONTHLY_SALES_REPORT);
-        String title = scenario.title();
-        // execute() 진입 시 승인은 이미 완료 — approvalRequired=false로 설정해 재진입 방지
-        return new WorkflowPlan(scenario, title, false, plan.approvalReason(), steps);
+        return new WorkflowPlan(scenario, scenario.title(), needsOrchestratorApproval, plan.approvalReason(), steps);
     }
 
     private AgentType agentTypeFor(String toolName) {
