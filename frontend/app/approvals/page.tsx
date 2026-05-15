@@ -29,7 +29,7 @@ function ApprovalsContent() {
   const [approvalPage, setApprovalPage] = useState(1);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const { data, isError, isLoading } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: ["approvals"],
     queryFn: listApprovals,
   });
@@ -94,7 +94,6 @@ function ApprovalsContent() {
     }
   }, [highlightRunId]);
 
-  const connectionLabel = isLoading ? "조회 중" : isError ? "오류" : "연결됨";
 
   return (
     <AppShell>
@@ -104,16 +103,6 @@ function ApprovalsContent() {
           title="위험한 자동화는 사람이 승인합니다"
           description="외부 발송, 구매팀 알림, 대량 고객 안내처럼 실제 업무 영향이 큰 단계는 승인함에서 통제합니다."
         />
-        <div className="mt-4 flex items-center gap-2 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-          <span
-            role="status"
-            aria-live="polite"
-            aria-label={`백엔드 연결 상태: ${connectionLabel}`}
-            className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`}
-          />
-          {isLoading ? "승인 목록 조회 중..." : isError ? "백엔드 미연결 — 데모 승인 표시 중" : "백엔드 연결됨"}
-        </div>
-
         {mutationError ? (
           <div role="alert" aria-live="assertive" className="mt-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm font-medium text-red-500">
             {mutationError}

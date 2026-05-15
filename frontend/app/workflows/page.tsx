@@ -30,7 +30,7 @@ function WorkflowsContent() {
   const highlightId = searchParams.get("id");
   const highlightRef = useRef<HTMLElement>(null);
 
-  const { data, isError, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["workflow-runs"],
     queryFn: listWorkflowRuns,
   });
@@ -47,7 +47,6 @@ function WorkflowsContent() {
     }
   }, [highlightId]);
 
-  const connectionLabel = isLoading ? "조회 중" : isError ? "오류" : "연결됨";
 
   return (
     <AppShell>
@@ -57,16 +56,6 @@ function WorkflowsContent() {
           title="업무 자동화 상태를 한 화면에서 봅니다"
           description="진행 중, 승인 대기, 완료된 에이전트 워크플로를 운영자가 빠르게 스캔할 수 있는 대시보드입니다."
         />
-        <div className="mt-4 flex items-center gap-2 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-          <span
-            role="status"
-            aria-live="polite"
-            aria-label={`백엔드 연결 상태: ${connectionLabel}`}
-            className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`}
-          />
-          {isLoading ? "백엔드 조회 중..." : isError ? "백엔드 미연결 — 데모 데이터 표시 중" : "백엔드 연결됨"}
-        </div>
-
         <div className="mt-8 overflow-hidden rounded-lg border border-hairline bg-surface-plain">
           <div className="grid border-b border-hairline bg-surface-card px-5 py-3 md:grid-cols-[1fr_auto]">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">워크플로</p>

@@ -253,7 +253,7 @@ export function CommandCenter() {
           role="log"
           aria-live="polite"
           aria-label="대화 기록"
-          className="max-h-[280px] space-y-4 overflow-y-auto px-4 py-5 md:max-h-[380px]"
+          className="h-[312px] space-y-4 overflow-y-auto px-4 py-5 md:h-[396px]"
           ref={chatContainerRef}
         >
           {messages.map((message) => {

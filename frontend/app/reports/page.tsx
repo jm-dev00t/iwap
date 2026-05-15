@@ -964,7 +964,7 @@ function ScenarioReportGroup({
 
 export default function ReportsPage() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const { data, isError, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["workflow-reports"],
     queryFn: listWorkflowRuns,
   });
@@ -1077,21 +1077,6 @@ export default function ReportsPage() {
         />
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-full bg-surface-card px-4 py-2 text-sm text-body">
-            <span
-              role="status"
-              aria-live="polite"
-              aria-label={`백엔드 연결 상태: ${isLoading ? "조회 중" : isError ? "오류" : "연결됨"}`}
-              className={`h-2 w-2 shrink-0 rounded-full ${isLoading ? "bg-amber animate-pulse" : isError ? "bg-red-500" : "bg-green-500"}`}
-            />
-            {isLoading
-              ? "보고서 산출물 조회 중..."
-              : isError
-                ? "백엔드 미연결 — 데모 보고서 표시 중"
-                : isFallback
-                  ? "백엔드 연결됨 — 실행 결과 없음, 데모 표시 중"
-                  : "백엔드 연결됨"}
-          </div>
           {(["monthly", "weekly", "customer", "inventory"] as const).map((key) => {
             const label = { monthly: "월간 매출", weekly: "주간 실적", customer: "고객 온보딩", inventory: "재고 부족" }[key];
             return (
