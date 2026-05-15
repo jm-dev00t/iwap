@@ -13,4 +13,8 @@ public record ToolCall(
     public static ToolCall completed(String toolName, String purpose) {
         return new ToolCall(toolName, purpose, Map.of(), ToolCallStatus.COMPLETED, OffsetDateTime.now());
     }
+
+    public static ToolCall failed(String toolName, String purpose) {
+        return new ToolCall(toolName, purpose, Map.of(), ToolCallStatus.FAILED, OffsetDateTime.now());
+    }
 }

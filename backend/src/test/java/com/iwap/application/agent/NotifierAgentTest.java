@@ -41,4 +41,21 @@ class NotifierAgentTest {
         assertThat(context.toolCalls()).hasSize(2);
         assertThat(context.toolCalls()).allMatch(tc -> tc.status() == ToolCallStatus.COMPLETED);
     }
+
+    @Test
+    void handleRecordsFailedToolCallWhenDeliveryFails() {
+        DeliveryService delivery = mock(DeliveryService.class);
+        when(delivery.sendSlack(any(), any())).thenReturn(DeliveryReceipt.failed("slack", "#ch", "error"));
+
+        WorkflowContext context = new WorkflowContext("run-fail", "test", "user@test.com");
+        context.setPlan(new WorkflowPlan(
+                WorkflowScenario.MONTHLY_SALES_REPORT, "Test", false, "",
+                List.of(new WorkflowStep(1, AgentType.NOTIFIER, "슬랙 발송", "Send to Slack", "slack"))
+        ));
+
+        new NotifierAgent(new WorkflowEventRecorder(), delivery).handle(context);
+
+        assertThat(context.toolCalls()).hasSize(1);
+        assertThat(context.toolCalls().get(0).status()).isEqualTo(ToolCallStatus.FAILED);
+    }
 }
