@@ -1,9 +1,14 @@
 package com.iwap.application.assistant;
 
 import com.iwap.application.workflow.WorkflowOrchestrator;
+import com.iwap.domain.agent.AgentType;
+import com.iwap.domain.workflow.WorkflowPlan;
 import com.iwap.domain.workflow.WorkflowRun;
+import com.iwap.domain.workflow.WorkflowScenario;
+import com.iwap.domain.workflow.WorkflowStep;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -101,7 +106,32 @@ public class AssistantService {
         if (plan.requiresApproval() && !request.approved()) {
             throw new IllegalStateException("Plan approval is required before execution.");
         }
+        if (plan.actions() != null && !plan.actions().isEmpty()) {
+            WorkflowPlan workflowPlan = toWorkflowPlan(plan);
+            return orchestrator.startWithPlan(plan.command(), workflowPlan, plan.requestedBy(),
+                    plan.slots() != null ? plan.slots() : java.util.Map.of());
+        }
         return orchestrator.start(plan.command(), plan.scenarioKey(), plan.requestedBy());
+    }
+
+    private WorkflowPlan toWorkflowPlan(AssistantPlan plan) {
+        List<WorkflowStep> steps = plan.actions().stream()
+                .map(a -> new WorkflowStep(a.order(), agentTypeFor(a.toolName()), a.title(), a.description(), a.toolName()))
+                .toList();
+        WorkflowScenario scenario = Arrays.stream(WorkflowScenario.values())
+                .filter(s -> s.key().equals(plan.scenarioKey()))
+                .findFirst()
+                .orElse(WorkflowScenario.MONTHLY_SALES_REPORT);
+        String title = plan.summary() != null && !plan.summary().isBlank() ? plan.summary() : scenario.title();
+        return new WorkflowPlan(scenario, title, plan.requiresApproval(), plan.approvalReason(), steps);
+    }
+
+    private AgentType agentTypeFor(String toolName) {
+        return switch (toolName) {
+            case "email", "slack", "kakao" -> AgentType.NOTIFIER;
+            case "report-generator" -> AgentType.REPORTER;
+            default -> AgentType.EXECUTOR;
+        };
     }
 
     private boolean isAffirmativeExecution(String message) {

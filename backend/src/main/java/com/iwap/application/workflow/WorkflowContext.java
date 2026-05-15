@@ -8,7 +8,9 @@ import com.iwap.domain.workflow.WorkflowEvent;
 import com.iwap.domain.workflow.WorkflowPlan;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Mutable execution context for one workflow run.
@@ -21,6 +23,7 @@ public class WorkflowContext {
     private final String runId;
     private final String command;
     private final String requestedBy;
+    private final Map<String, Object> slots;
     private WorkflowPlan plan;
     private final List<WorkflowEvent> events = new ArrayList<>();
     private final List<ToolCall> toolCalls = new ArrayList<>();
@@ -29,9 +32,14 @@ public class WorkflowContext {
     private final List<AuditLogEntry> auditTrail = new ArrayList<>();
 
     public WorkflowContext(String runId, String command, String requestedBy) {
+        this(runId, command, requestedBy, Map.of());
+    }
+
+    public WorkflowContext(String runId, String command, String requestedBy, Map<String, Object> slots) {
         this.runId = runId;
         this.command = command;
         this.requestedBy = requestedBy;
+        this.slots = slots != null ? new HashMap<>(slots) : new HashMap<>();
     }
 
     public String runId() {
@@ -68,6 +76,10 @@ public class WorkflowContext {
 
     public List<ReportArtifact> artifacts() {
         return artifacts;
+    }
+
+    public Map<String, Object> slots() {
+        return slots;
     }
 
     public List<AuditLogEntry> auditTrail() {

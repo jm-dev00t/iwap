@@ -39,7 +39,7 @@ public class NotifierAgent implements WorkflowAgent {
                 case "slack" -> deliveryService.sendSlack(null,
                         context.plan().title() + " 완료. 상세 내용은 IWAP 보고서를 확인하세요.");
                 case "email" -> deliveryService.sendEmail(
-                        context.requestedBy(),
+                        resolveRecipient(context),
                         "[IWAP] " + context.plan().title() + " 완료",
                         buildEmailBody(context));
                 default -> deliveryService.recordKakaoWork(null,
@@ -57,6 +57,11 @@ public class NotifierAgent implements WorkflowAgent {
 
         String summary = succeeded + "건 발송 완료" + (failed > 0 ? ", " + failed + "건 실패" : "");
         recorder.record(context, type(), WorkflowEventType.NOTIFICATION_COMPLETED, summary);
+    }
+
+    private String resolveRecipient(WorkflowContext context) {
+        Object email = context.slots().get("recipientEmail");
+        return email != null ? email.toString() : context.requestedBy();
     }
 
     private String buildEmailBody(WorkflowContext context) {

@@ -28,7 +28,8 @@ public class PlannerAgent implements WorkflowAgent {
 
     @Override
     public void handle(WorkflowContext context) {
-        WorkflowPlan plan = planFor(context.command());
+        // LLM이 이미 변환한 plan이 있으면 키워드 매칭을 건너뛴다
+        WorkflowPlan plan = context.plan() != null ? context.plan() : planFor(context.command());
         context.setPlan(plan);
 
         if (plan.approvalRequired()) {

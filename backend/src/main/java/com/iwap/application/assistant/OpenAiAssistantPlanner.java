@@ -54,6 +54,8 @@ public class OpenAiAssistantPlanner implements AssistantPlanner {
             for (var msg : session.messages()) {
                 if ("user".equals(msg.role())) {
                     spec = spec.user(msg.content());
+                } else if ("assistant".equals(msg.role())) {
+                    spec = spec.assistant(msg.content());
                 }
             }
         }

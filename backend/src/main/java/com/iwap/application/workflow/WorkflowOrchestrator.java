@@ -5,6 +5,7 @@ import com.iwap.application.agent.*;
 import com.iwap.application.delivery.DeliveryService;
 import com.iwap.domain.approval.ApprovalRequest;
 import com.iwap.domain.audit.AuditLogEntry;
+import com.iwap.domain.workflow.WorkflowPlan;
 import com.iwap.domain.workflow.WorkflowRun;
 import com.iwap.domain.workflow.WorkflowStatus;
 
@@ -54,6 +55,35 @@ public class WorkflowOrchestrator {
 
     public WorkflowRun start(String command, String requestedBy) {
         return start(command, null, requestedBy);
+    }
+
+    /**
+     * LLM이 생성한 WorkflowPlan을 그대로 실행한다. PlannerAgent의 키워드 매칭을 건너뛴다.
+     */
+    public WorkflowRun startWithPlan(String command, WorkflowPlan plan, String requestedBy, Map<String, Object> slots) {
+        String runId = nextRunId(plan.scenario().key());
+        WorkflowContext context = new WorkflowContext(runId, command, requestedBy, slots);
+        context.setPlan(plan);
+
+        if (plan.approvalRequired()) {
+            String approvalId = runId + "-approval-" + UUID.randomUUID().toString().substring(0, 8);
+            context.approvals().add(ApprovalRequest.pending(
+                    approvalId, runId,
+                    com.iwap.domain.agent.AgentType.PLANNER.name(),
+                    plan.approvalReason()));
+            pendingContexts.put(runId, context);
+            return store.save(new WorkflowRun(
+                    runId, plan.title(), command, requestedBy,
+                    WorkflowStatus.WAITING_FOR_APPROVAL,
+                    List.copyOf(context.events()),
+                    List.of(),
+                    List.copyOf(context.approvals()),
+                    List.of(),
+                    List.copyOf(context.auditTrail())
+            ));
+        }
+
+        return runPipeline(context);
     }
 
     public WorkflowRun start(String command, String scenarioKey, String requestedBy) {
