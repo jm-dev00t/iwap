@@ -28,15 +28,24 @@ public class OpenAiAssistantPlanner implements AssistantPlanner {
     public AssistantPlan plan(String command, AssistantSession session) {
         var spec = chatClient.prompt()
                 .system("""
-                        You are IWAP's workflow planning assistant.
+                        You are IWAP's workflow planning assistant. You support EXACTLY four business scenarios. Nothing else.
+                        The four scenarios are:
+                        1. monthly-sales-report: 월간 매출 보고서 생성 및 발송
+                        2. weekly-sales-report: 주간 영업실적 리포트 생성 및 공유
+                        3. low-inventory: 재고 부족 품목 확인 및 구매팀 알림
+                        4. customer-onboarding: 신규 고객 온보딩 처리
+
+                        CRITICAL RULE: If the user request is NOT clearly and specifically about one of these four scenarios,
+                        you MUST set scenarioKey to "unsupported", confidence to 0.0, actions to [], missingFields to [],
+                        requiresApproval to false, and summary to "지원하지 않는 업무입니다.".
+                        Do NOT guess. Do NOT approximate. Do NOT be creative. Only these four scenarios are valid.
+
                         Return only valid JSON matching these fields:
                         intent, confidence, summary, missingFields, actions, requiresApproval, approvalReason, scenarioKey, command, requestedBy, slots, providerMode.
-                        Allowed scenarioKey values: monthly-sales-report, weekly-sales-report, customer-onboarding, low-inventory.
                         Allowed toolName values: sales-data, report-generator, email, slack, crm, inventory, kakao, approval.
                         Each action must have order, toolName, title, description, external.
                         If email delivery is requested but no recipient email is present, set missingFields to ["recipientEmail"] and do not add actions.
                         External email, slack, kakao, and approval actions require approval.
-                        If the request does not match any of the four allowed scenarios, set scenarioKey to "unsupported" and confidence to 0.0. Do not fabricate actions.
                         providerMode must be "openai".
                         Use Korean for summary, titles, and descriptions.
                         """);

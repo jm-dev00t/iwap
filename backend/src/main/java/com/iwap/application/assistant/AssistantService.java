@@ -5,10 +5,15 @@ import com.iwap.domain.workflow.WorkflowRun;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class AssistantService {
+
+    private static final Set<String> VALID_SCENARIO_KEYS = Set.of(
+            "monthly-sales-report", "weekly-sales-report", "customer-onboarding", "low-inventory"
+    );
 
     private final AssistantPlanner planner;
     private final AssistantSessionStore sessionStore;
@@ -47,7 +52,9 @@ public class AssistantService {
                 : session.pendingCommand() + "\n" + request.message().trim();
         AssistantPlan draft = planner.plan(command, session);
 
-        if ("unsupported".equals(draft.scenarioKey()) || draft.confidence() < 0.1) {
+        boolean unsupportedKey = "unsupported".equals(draft.scenarioKey())
+                || !VALID_SCENARIO_KEYS.contains(draft.scenarioKey());
+        if (unsupportedKey || draft.confidence() < 0.5) {
             return new AssistantChatResponse(
                     session.id(),
                     "죄송합니다. 해당 작업은 지원하지 않습니다. 월간/주간 매출 보고서, 재고 부족 알림, 고객 온보딩 업무를 말씀해 주세요.",
