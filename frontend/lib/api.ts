@@ -25,6 +25,7 @@ export type WorkflowRun = {
   toolCalls: Array<{
     toolName: string;
     purpose: string;
+    arguments?: Record<string, unknown>;
     status: string;
   }>;
   approvals: Array<{
@@ -67,6 +68,43 @@ export type DemoScenario = {
   title: string;
   command: string;
   businessValue: string;
+};
+
+export type AssistantState = "NEEDS_INPUT" | "PLAN_READY" | "EXECUTED";
+
+export type AssistantPlanAction = {
+  order: number;
+  toolName: string;
+  title: string;
+  description: string;
+  external: boolean;
+};
+
+export type AssistantPlan = {
+  id: string;
+  sessionId: string;
+  intent: string;
+  confidence: number;
+  summary: string;
+  missingFields: string[];
+  actions: AssistantPlanAction[];
+  requiresApproval: boolean;
+  approvalReason: string;
+  scenarioKey: string;
+  command: string;
+  requestedBy: string;
+  slots: Record<string, unknown>;
+  providerMode: "mock" | "openai" | string;
+  createdAt: string;
+};
+
+export type AssistantChatResponse = {
+  sessionId: string;
+  assistantMessage: string;
+  state: AssistantState;
+  plan: AssistantPlan | null;
+  missingFields: string[];
+  run: WorkflowRun | null;
 };
 
 export type ToolAdapter = {
@@ -189,6 +227,41 @@ export async function startWorkflow(
 
   if (!response.ok) {
     throw new Error(`워크플로 API 실패: ${response.status}`);
+  }
+
+  return normalizeWorkflowRun(await response.json());
+}
+
+export async function sendAssistantMessage(sessionId: string | null, message: string): Promise<AssistantChatResponse> {
+  const response = await fetchApi(`${API_BASE_URL}/api/assistant/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      sessionId,
+      message,
+    }),
+  }, 5000);
+
+  if (!response.ok) {
+    throw new Error(`AI Assistant API 실패: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function executeAssistantPlan(planId: string, approved = true): Promise<WorkflowRun> {
+  const response = await fetchApi(`${API_BASE_URL}/api/assistant/plans/${planId}/execute`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ approved }),
+  }, 5000);
+
+  if (!response.ok) {
+    throw new Error(`AI Assistant 실행 API 실패: ${response.status}`);
   }
 
   return normalizeWorkflowRun(await response.json());
@@ -359,6 +432,30 @@ export function demoApprovals(): ApprovalItem[] {
       requestedAt: new Date().toISOString(),
     },
   ];
+}
+
+export type DataSourceResult = {
+  type: string;
+  label: string;
+  rowCount: number;
+  headers: string[];
+  rows: string[][];
+};
+
+export async function listDataSources(): Promise<DataSourceResult[]> {
+  const response = await fetchApi(`${API_BASE_URL}/api/data-sources`);
+  if (!response.ok) {
+    throw new Error(`데이터 소스 API 실패: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function getDataSource(type: string): Promise<DataSourceResult> {
+  const response = await fetchApi(`${API_BASE_URL}/api/data-sources/${type}`);
+  if (!response.ok) {
+    throw new Error(`데이터 소스 API 실패: ${response.status}`);
+  }
+  return response.json();
 }
 
 export function demoWorkflowRun(command: string): WorkflowRun {

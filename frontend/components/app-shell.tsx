@@ -1,4 +1,4 @@
-import { BarChart3, CheckSquare, History, LayoutDashboard, MessageSquareText, Settings } from "lucide-react";
+import { BarChart3, CheckSquare, Database, History, LayoutDashboard, MessageSquareText, Settings } from "lucide-react";
 import Link from "next/link";
 
 const navItems = [
@@ -7,6 +7,7 @@ const navItems = [
   { label: "승인함", href: "/approvals", icon: CheckSquare },
   { label: "이력", href: "/history", icon: History },
   { label: "보고서", href: "/reports", icon: BarChart3 },
+  { label: "데이터 소스", href: "/data", icon: Database },
   { label: "설정", href: "/settings", icon: Settings },
 ];
 
