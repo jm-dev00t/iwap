@@ -2,12 +2,17 @@ package com.iwap.application.assistant;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 @Component
@@ -50,14 +55,16 @@ public class OpenAiAssistantPlanner implements AssistantPlanner {
                         Use Korean for summary, titles, and descriptions.
                         """);
 
-        if (session.messages() != null) {
+        if (session.messages() != null && !session.messages().isEmpty()) {
+            List<Message> history = new ArrayList<>();
             for (var msg : session.messages()) {
                 if ("user".equals(msg.role())) {
-                    spec = spec.user(msg.content());
+                    history.add(new UserMessage(msg.content()));
                 } else if ("assistant".equals(msg.role())) {
-                    spec = spec.assistant(msg.content());
+                    history.add(new AssistantMessage(msg.content()));
                 }
             }
+            spec = spec.messages(history);
         }
 
         String content = spec.user(command).call().content();
