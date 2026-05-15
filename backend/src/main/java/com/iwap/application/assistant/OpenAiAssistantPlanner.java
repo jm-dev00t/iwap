@@ -36,6 +36,7 @@ public class OpenAiAssistantPlanner implements AssistantPlanner {
                         Each action must have order, toolName, title, description, external.
                         If email delivery is requested but no recipient email is present, set missingFields to ["recipientEmail"] and do not add actions.
                         External email, slack, kakao, and approval actions require approval.
+                        If the request does not match any of the four allowed scenarios, set scenarioKey to "unsupported" and confidence to 0.0. Do not fabricate actions.
                         providerMode must be "openai".
                         Use Korean for summary, titles, and descriptions.
                         """);

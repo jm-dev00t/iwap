@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Bot, CheckCircle2, Loader2, MailCheck, Play, Send, ShieldCheck, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   executeAssistantPlan,
   sendAssistantMessage,
@@ -146,6 +146,11 @@ export function CommandCenter() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   function addMessage(role: ChatMessage["role"], text: string) {
     setMessages((current) => [...current, { id: `${role}-${Date.now()}-${current.length}`, role, text }]);
@@ -247,6 +252,7 @@ export function CommandCenter() {
               </div>
             );
           })}
+          <div ref={chatEndRef} />
         </div>
 
         <div className="border-t border-hairline bg-surface-plain p-3">

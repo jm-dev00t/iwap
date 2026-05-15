@@ -47,6 +47,17 @@ public class AssistantService {
                 : session.pendingCommand() + "\n" + request.message().trim();
         AssistantPlan draft = planner.plan(command, session);
 
+        if ("unsupported".equals(draft.scenarioKey()) || draft.confidence() < 0.1) {
+            return new AssistantChatResponse(
+                    session.id(),
+                    "죄송합니다. 해당 작업은 지원하지 않습니다. 월간/주간 매출 보고서, 재고 부족 알림, 고객 온보딩 업무를 말씀해 주세요.",
+                    AssistantState.UNSUPPORTED,
+                    null,
+                    List.of(),
+                    null
+            );
+        }
+
         if (draft.missingFields() != null && !draft.missingFields().isEmpty()) {
             sessionStore.save(session.withPendingCommand(command));
             return new AssistantChatResponse(
