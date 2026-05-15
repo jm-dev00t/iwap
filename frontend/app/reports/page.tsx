@@ -3,7 +3,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Database, Download, Eye, FileText, Mail, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Database, Download, Eye, FileText, Mail, MessageSquare } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeading } from "@/components/page-heading";
 import { demoWorkflowRuns, listWorkflowRuns, type WorkflowRun } from "@/lib/api";
@@ -59,14 +59,20 @@ const reportSourceData = {
       {
         title: "채널별 매출 실적",
         columns: ["채널", "5월 매출", "4월 매출", "목표", "주문", "마진율"],
-        rows: monthlySalesData.map((row) => [
-          row.channel,
-          `${row.current.toFixed(1)}M원`,
-          `${row.previous.toFixed(1)}M원`,
-          `${row.target.toFixed(1)}M원`,
-          `${row.orders}건`,
-          `${row.margin}%`,
-        ]),
+        rows: [
+          ...monthlySalesData.map((row) => [
+            row.channel,
+            `${row.current.toFixed(1)}M원`,
+            `${row.previous.toFixed(1)}M원`,
+            `${row.target.toFixed(1)}M원`,
+            `${row.orders}건`,
+            `${row.margin}%`,
+          ]),
+          ["Reseller", "11.2M원", "9.8M원", "10.5M원", "31건", "22%"],
+          ["Agency", "8.7M원", "7.6M원", "8.0M원", "14건", "19%"],
+          ["Enterprise Direct", "62.1M원", "58.3M원", "60.0M원", "7건", "44%"],
+          ["Marketplace", "5.3M원", "4.9M원", "5.0M원", "89건", "12%"],
+        ],
       },
       {
         title: "보고서 생성 규칙",
@@ -75,6 +81,9 @@ const reportSourceData = {
           ["전월 대비", "+9.3%", "증감 사유 요약"],
           ["목표 달성률", "106.9%", "초과 달성 채널 강조"],
           ["최고 기여 채널", "B2B Direct", "추천 액션 생성"],
+          ["최저 마진 채널", "Marketplace", "수익성 경고 추가"],
+          ["신규 채널", "Enterprise Direct", "성장 기회 표시"],
+          ["이상 거래 감지", "없음", "정상 처리"],
         ],
       },
     ],
@@ -92,6 +101,9 @@ const reportSourceData = {
           ["미팅 전환", "18건", "17건", "+5.9%"],
           ["리드 전환율", "28.1%", "26.4%", "+1.7%p"],
           ["예상 파이프라인", "94,000,000원", "86,700,000원", "+8.4%"],
+          ["제안서 발송", "11건", "9건", "+22.2%"],
+          ["계약 성사", "3건", "4건", "-25.0%"],
+          ["평균 딜 사이즈", "31,333,333원", "21,675,000원", "+44.6%"],
         ],
       },
       {
@@ -101,6 +113,9 @@ const reportSourceData = {
           ["Blue Harbor Retail", "제안 검토", "42,000,000원", "ROI 자료 발송"],
           ["Northwind Partners", "가격 협의", "31,000,000원", "계약 조건 조율"],
           ["Urban Supply Co.", "기술 검토", "21,000,000원", "보안 체크리스트 회신"],
+          ["Summit Logistics", "초도 미팅", "18,500,000원", "요구사항 분석 예약"],
+          ["Crestline Group", "PoC 진행", "15,000,000원", "PoC 결과 보고"],
+          ["Maple Retail", "계약 검토", "12,800,000원", "법무 검토 요청"],
         ],
       },
     ],
@@ -117,6 +132,10 @@ const reportSourceData = {
           ["고객사", "Blue Harbor Retail", "CRM 계정 생성"],
           ["세그먼트", "Growth Retail", "온보딩 템플릿 선택"],
           ["담당자", "account-owner@demo-company.com", "내부 알림 지정"],
+          ["계약 유형", "연간 구독", "청구 주기 설정"],
+          ["온보딩 단계", "1단계: 환경 설정", "체크리스트 발송"],
+          ["SLA 등급", "Standard", "에스컬레이션 규칙 적용"],
+          ["연락처 확인", "완료", "CRM 검증 처리"],
         ],
       },
     ],
@@ -133,6 +152,10 @@ const reportSourceData = {
           ["SKU-RED-001", "레드 패키지 박스", "12", "50", "120"],
           ["SKU-GRN-014", "그린 라벨 세트", "8", "40", "90"],
           ["SKU-BLK-021", "블랙 완충재", "17", "60", "100"],
+          ["SKU-WHT-033", "흰색 포장 테이프", "22", "80", "150"],
+          ["SKU-BLU-007", "블루 쇼핑백 (대)", "6", "30", "80"],
+          ["SKU-YLW-019", "노란 라벨 스티커", "31", "100", "200"],
+          ["SKU-SLV-044", "실버 리본 세트", "4", "25", "60"],
         ],
       },
     ],
@@ -310,6 +333,66 @@ function MarkdownPreview({ content }: { content: string }) {
   );
 }
 
+const TABLE_PAGE_SIZE = 5;
+
+function PaginatedTable({ table }: { table: { title: string; columns: string[]; rows: string[][] } }) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(table.rows.length / TABLE_PAGE_SIZE));
+  const pageRows = table.rows.slice((page - 1) * TABLE_PAGE_SIZE, page * TABLE_PAGE_SIZE);
+  const start = (page - 1) * TABLE_PAGE_SIZE + 1;
+  const end = Math.min(page * TABLE_PAGE_SIZE, table.rows.length);
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-hairline bg-surface-plain">
+      <div className="border-b border-hairline px-4 py-3">
+        <p className="text-sm font-semibold text-ink">{table.title}</p>
+      </div>
+      <table className="min-w-full text-sm">
+        <thead className="bg-canvas text-muted">
+          <tr>
+            {table.columns.map((column) => (
+              <th className="px-3 py-2 text-left font-semibold" key={column}>{column}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-hairline">
+          {pageRows.map((row, rowIndex) => (
+            <tr key={`${table.title}-${rowIndex}`}>
+              {row.map((cell, cellIndex) => (
+                <td className={`px-3 py-2 ${cellIndex === 0 ? "font-medium text-ink" : "text-body"}`} key={`${cell}-${cellIndex}`}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="flex items-center justify-between border-t border-hairline px-4 py-2 text-sm text-muted">
+        <span>전체 {table.rows.length}건 중 {start}–{end} 표시</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            이전
+          </button>
+          <span className="font-medium text-ink">{page} / {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            다음
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReportSourceDataPanel({ scenario }: { scenario: ReturnType<typeof reportScenario> }) {
   if (scenario === "default") {
     return null;
@@ -337,33 +420,7 @@ function ReportSourceDataPanel({ scenario }: { scenario: ReturnType<typeof repor
 
       <div className="mt-5 grid gap-4">
         {data.tables.map((table) => (
-          <div className="overflow-x-auto rounded-lg border border-hairline bg-surface-plain" key={table.title}>
-            <div className="border-b border-hairline px-4 py-3">
-              <p className="text-sm font-semibold text-ink">{table.title}</p>
-            </div>
-            <table className="min-w-full text-sm">
-              <thead className="bg-canvas text-muted">
-                <tr>
-                  {table.columns.map((column) => (
-                    <th className="px-3 py-2 text-left font-semibold" key={column}>
-                      {column}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {table.rows.map((row, rowIndex) => (
-                  <tr key={`${table.title}-${rowIndex}`}>
-                    {row.map((cell, cellIndex) => (
-                      <td className={`px-3 py-2 ${cellIndex === 0 ? "font-medium text-ink" : "text-body"}`} key={`${cell}-${cellIndex}`}>
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PaginatedTable key={table.title} table={table} />
         ))}
       </div>
     </section>
