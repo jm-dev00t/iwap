@@ -613,12 +613,8 @@ function ScenarioReportGroup({
   onSelect: (id: string) => void;
   onPdf: (report: Report) => void;
 }) {
-  const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(reports.length / REPORTS_PER_PAGE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedReports = reports.slice((currentPage - 1) * REPORTS_PER_PAGE, currentPage * REPORTS_PER_PAGE);
-
-  if (reports.length === 0) return null;
+  const report = reports[0];
+  if (!report) return null;
 
   return (
     <div className="mt-6 first:mt-0">
@@ -626,76 +622,45 @@ function ScenarioReportGroup({
         {SCENARIO_LABELS[scenarioKey] ?? scenarioKey}{" "}
         <span className="text-ink">{reports.length}건</span>
       </p>
-      <div className="grid gap-4">
-        {pagedReports.map((report) => (
-          <article
-            className={`relative cursor-pointer rounded-xl border p-5 shadow-soft transition ${
-              selectedReportId === report.id
-                ? "border-primary bg-surface-plain ring-2 ring-primary/30"
-                : "border-hairline bg-surface-card hover:border-primary/60"
-            }`}
-            key={`${report.runId}-${report.id}`}
-            onClick={() => onSelect(report.id)}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="rounded-full bg-canvas p-2 text-primary">
-                  <FileText className="h-4 w-4" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted">{formatDate(report.createdAt)}</p>
-                  <h2 className="mt-0.5 text-base font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {selectedReportId === report.id ? (
-                  <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">선택됨</span>
-                ) : null}
-                <button
-                  className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-plain hover:text-primary"
-                  onClick={(e) => { e.stopPropagation(); onPdf(report); }}
-                  title="PDF 저장"
-                  type="button"
-                >
-                  <Download className="h-4 w-4" />
-                </button>
-              </div>
+      <article
+        className={`relative cursor-pointer rounded-xl border p-5 shadow-soft transition ${
+          selectedReportId === report.id
+            ? "border-primary bg-surface-plain ring-2 ring-primary/30"
+            : "border-hairline bg-surface-card hover:border-primary/60"
+        }`}
+        onClick={() => onSelect(report.id)}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="rounded-full bg-canvas p-2 text-primary">
+              <FileText className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs text-muted">{formatDate(report.createdAt)}</p>
+              <h2 className="mt-0.5 text-base font-semibold text-ink">{workflowTitleLabel(report.title)}</h2>
             </div>
-            <p className="mt-3 text-sm leading-6 text-body">{report.summary}</p>
-            <div className="mt-3 rounded-lg bg-surface-plain p-3">
-              <p className="text-xs font-medium text-muted">워크플로</p>
-              <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
-              <p className="mt-1 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
-            </div>
-          </article>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center justify-between text-sm text-muted">
-        <span>
-          {reports.length}건 중 {(currentPage - 1) * REPORTS_PER_PAGE + 1}–{Math.min(currentPage * REPORTS_PER_PAGE, reports.length)} 표시
-        </span>
-        <div className="flex items-center gap-3">
-          <button
-            className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
-            disabled={currentPage === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            type="button"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            이전
-          </button>
-          <span className="font-medium text-ink">{currentPage} / {totalPages}</span>
-          <button
-            className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
-            disabled={currentPage === totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            type="button"
-          >
-            다음
-            <ChevronRight className="h-4 w-4" />
-          </button>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {selectedReportId === report.id ? (
+              <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">선택됨</span>
+            ) : null}
+            <button
+              className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-plain hover:text-primary"
+              onClick={(e) => { e.stopPropagation(); onPdf(report); }}
+              title="PDF 저장"
+              type="button"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-      </div>
+        <p className="mt-3 text-sm leading-6 text-body">{report.summary}</p>
+        <div className="mt-3 rounded-lg bg-surface-plain p-3">
+          <p className="text-xs font-medium text-muted">워크플로</p>
+          <p className="mt-1 text-sm text-ink">{workflowTitleLabel(report.runTitle)}</p>
+          <p className="mt-1 break-words font-mono text-xs leading-5 text-muted">{report.command}</p>
+        </div>
+      </article>
     </div>
   );
 }
