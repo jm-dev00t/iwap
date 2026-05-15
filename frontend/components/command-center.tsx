@@ -206,7 +206,11 @@ export function CommandCenter() {
       const nextRun = await executeAssistantPlan(plan.id, true);
       setRun(nextRun);
       setPlan(null);
-      addMessage("assistant", `${workflowTitleLabel(nextRun.title)} 실행을 완료했습니다. 보고서와 발송 상태를 아래에서 확인할 수 있습니다.`);
+      const statusMsg =
+        nextRun.status === "WAITING_FOR_APPROVAL"
+          ? `${workflowTitleLabel(nextRun.title)} 실행을 시작했습니다. 외부 발송 단계는 승인이 필요합니다. 승인함에서 처리해 주세요.`
+          : `${workflowTitleLabel(nextRun.title)} 실행을 완료했습니다. 발송 상태는 아래에서 확인할 수 있습니다.`;
+      addMessage("assistant", statusMsg);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "실행에 실패했습니다.");
       addMessage("assistant", "실행 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.");
@@ -239,10 +243,11 @@ export function CommandCenter() {
         ))}
       </div>
 
-      <div className="mt-6 space-y-4">
-        {plan ? <PlanCard isExecuting={isExecuting} onExecute={() => void executePlan()} plan={plan} /> : null}
-        {run ? <ResultCard run={run} /> : null}
-      </div>
+      {plan ? (
+        <div className="mt-6">
+          <PlanCard isExecuting={isExecuting} onExecute={() => void executePlan()} plan={plan} />
+        </div>
+      ) : null}
 
       <div className="mt-6 overflow-hidden rounded-xl border border-hairline bg-canvas shadow-soft">
         <div className="border-b border-hairline bg-surface-card px-4 py-3">
@@ -318,6 +323,12 @@ export function CommandCenter() {
           ) : null}
         </div>
       </div>
+
+      {run ? (
+        <div className="mt-6">
+          <ResultCard run={run} />
+        </div>
+      ) : null}
 
     </section>
   );

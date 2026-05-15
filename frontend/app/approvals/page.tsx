@@ -34,7 +34,8 @@ function ApprovalsContent() {
     queryFn: listApprovals,
   });
 
-  const rawApprovals = data && data.length > 0 ? data : demoApprovals();
+  // API 오류일 때만 데모 데이터. 연결됐는데 빈 배열이면 빈 상태 표시.
+  const rawApprovals = isError ? demoApprovals() : (data ?? []);
   const approvals = rawApprovals
     .map((approval) => ({
       ...approval,
@@ -82,6 +83,11 @@ function ApprovalsContent() {
   });
 
   function handleDecide(approval: ApprovalItem, decision: "APPROVED" | "REJECTED") {
+    if (isError) {
+      // 데모 모드: API 호출 없이 로컬에서만 반영
+      setLocalDecisions((current) => ({ ...current, [approval.id]: decision }));
+      return;
+    }
     setMutationError(null);
     setProcessingId(approval.id);
     setProcessingDecision(decision);
@@ -106,6 +112,16 @@ function ApprovalsContent() {
         {mutationError ? (
           <div role="alert" aria-live="assertive" className="mt-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm font-medium text-red-500">
             {mutationError}
+          </div>
+        ) : null}
+
+        {!isError && approvals.length === 0 ? (
+          <div className="mt-8 rounded-xl border border-hairline bg-surface-card p-10 text-center">
+            <p className="text-sm font-semibold text-ink">승인 대기 중인 항목이 없습니다</p>
+            <p className="mt-2 text-sm text-muted">외부 발송이 포함된 워크플로를 실행하면 여기에서 승인할 수 있습니다.</p>
+            <a href="/" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+              명령 센터에서 워크플로 실행 →
+            </a>
           </div>
         ) : null}
 
