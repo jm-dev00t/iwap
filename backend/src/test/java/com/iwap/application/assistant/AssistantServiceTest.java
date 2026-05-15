@@ -1,6 +1,7 @@
 package com.iwap.application.assistant;
 
 import com.iwap.application.agent.*;
+import com.iwap.application.datasource.DataSourceService;
 import com.iwap.application.delivery.DeliveryService;
 import com.iwap.application.tool.ToolRegistry;
 import com.iwap.application.workflow.*;
@@ -102,7 +103,7 @@ class AssistantServiceTest {
                 new PlannerAgent(recorder),
                 new ExecutorAgent(toolRegistry, recorder),
                 new ValidatorAgent(recorder),
-                new ReporterAgent(recorder),
+                new ReporterAgent(recorder, new DataSourceService()),
                 new NotifierAgent(recorder, delivery)
         );
         return new AssistantService(new MockAssistantPlanner(), new InMemoryAssistantSessionStore(), new InMemoryAssistantPlanStore(), orchestrator);

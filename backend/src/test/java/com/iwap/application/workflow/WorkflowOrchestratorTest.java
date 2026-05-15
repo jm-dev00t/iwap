@@ -1,6 +1,7 @@
 package com.iwap.application.workflow;
 
 import com.iwap.application.agent.*;
+import com.iwap.application.datasource.DataSourceService;
 import com.iwap.application.delivery.DeliveryService;
 import com.iwap.application.tool.ToolRegistry;
 import com.iwap.domain.workflow.WorkflowRun;
@@ -28,7 +29,7 @@ class WorkflowOrchestratorTest {
                 new PlannerAgent(recorder),
                 new ExecutorAgent(toolRegistry, recorder),
                 new ValidatorAgent(recorder),
-                new ReporterAgent(recorder),
+                new ReporterAgent(recorder, new DataSourceService()),
                 new NotifierAgent(recorder, delivery)
         );
     }
