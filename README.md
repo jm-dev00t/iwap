@@ -76,22 +76,24 @@ IWAP은 따뜻한 엔터프라이즈 콘솔 스타일을 지향합니다. 크림
 
 ## 현재 구현 범위
 
-현재 버전은 배포 가능한 포트폴리오 데모 스캐폴드입니다.
+현재 버전은 챗봇형 업무 자동화 데모입니다. OpenAI 키가 있으면 LLM 플래너가 자연어 업무를 구조화하고, 키가 없으면 동일한 API 계약의 데모 플래너가 안전하게 동작합니다.
 
-- 자연어 명령 기반 워크플로 실행 API
+- AI Assistant 채팅 API: 자연어 입력, 부족 정보 질문, 실행 계획 생성, 승인 후 실행
+- OpenAI/Spring AI 기반 planner boundary와 mock planner fallback
 - 월간 매출 보고서 완료 플로우
 - 신규 고객 온보딩 완료 플로우
 - 재고 부족 승인 대기 플로우
 - 주간 영업 리포트 완료 플로우
+- 이메일/슬랙 실제 발송 adapter boundary와 데모 발송함 기록
 - Demo JWT 로그인과 상태 변경 API 보호
 - 승인/반려 API와 중복 결정 방지
-- 프론트엔드 Command Center에서 백엔드 API 호출
+- 프론트엔드 Command Center에서 챗봇 대화, 계획 확인, 실행 결과 확인
 - 워크플로, 이벤트, 툴 호출, 승인 요청, 감사 로그, 메모리 DB 스키마
 - PGVector 기반 메모리 테이블 준비
 - Docker Compose 기반 로컬 실행
 - 배포 전 테스트 시나리오와 seed 데이터
 
-아직 실제 외부 발송은 mock/demo 구조입니다. Slack, Email, KakaoWork, CRM, ERP는 adapter boundary와 데모용 tool call 이력으로 표현되어 있고, 실제 vendor API 호출은 다음 단계에서 붙일 수 있습니다.
+`IWAP_INTEGRATION_MODE=mock`이면 외부 발송은 데모 발송함 기록으로 남습니다. `real` 모드에서 SMTP/Slack 값이 있으면 이메일과 Slack 실제 발송을 시도하고, 값이 없거나 실패하면 도구 호출 결과에 실패/데모 상태를 기록합니다.
 
 ## 로컬 실행
 
@@ -126,6 +128,7 @@ docker compose up -d --build
 - `IWAP_POSTGRES_PORT=5432`
 - `IWAP_AI_PROVIDER=mock`
 - `IWAP_INTEGRATION_MODE=mock`
+- `IWAP_OPENAI_CHAT_MODEL=`
 - `IWAP_ALLOWED_ORIGINS=http://localhost:3000`
 - `NEXT_PUBLIC_IWAP_API_BASE_URL=http://localhost:8080`
 - `NEXT_PUBLIC_IWAP_WS_URL=http://localhost:8080/ws/workflows`
@@ -133,6 +136,10 @@ docker compose up -d --build
 실제 외부 연동을 추가할 때 필요한 후보:
 
 - `OPENAI_API_KEY`
+- `IWAP_AI_PROVIDER=openai`
+- `IWAP_SPRING_AI_CHAT_MODEL=openai`
+- `IWAP_OPENAI_CHAT_MODEL`
+- `IWAP_INTEGRATION_MODE=real`
 - `SLACK_BOT_TOKEN`
 - `SLACK_DEFAULT_CHANNEL`
 - `SMTP_HOST`
@@ -349,3 +356,11 @@ curl.exe -I http://localhost:3000
 - 미인증 워크플로 POST는 `401`로 차단
 - demo-login 후 워크플로 POST는 정상 생성
 - 데모 시나리오 API와 프론트 첫 화면에서 정상 한국어 렌더 확인
+
+## 작업 현황
+
+| 작업 | 상태 | 완료일 |
+|------|------|--------|
+| 소스 데이터 뷰어 페이지 | ✅ 완료 | 2026-05-15 |
+| Agent 실제 동작 + 상태 기계 | ⏳ 대기 | - |
+| OpenAI 플래너 멀티턴 | ⏳ 대기 | - |
