@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -34,6 +35,8 @@ export default function HistoryPage() {
 
   const totalPages = Math.max(1, Math.ceil(auditRows.length / PAGE_SIZE));
   const pageRows = auditRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const start = (page - 1) * PAGE_SIZE + 1;
+  const end = Math.min(page * PAGE_SIZE, auditRows.length);
 
   return (
     <AppShell>
@@ -48,9 +51,16 @@ export default function HistoryPage() {
         </div>
 
         <div className="mt-8 overflow-hidden rounded-lg border border-hairline bg-surface-plain">
+          {/* 테이블 헤더 */}
+          <div className="grid gap-2 border-b border-hairline bg-surface-card px-4 py-3 md:grid-cols-[180px_220px_1fr]">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">에이전트</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">액션</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">내용</p>
+          </div>
+
           {pageRows.map((row, index) => (
             <div
-              className="grid gap-2 border-b border-hairline p-4 md:grid-cols-[180px_220px_1fr]"
+              className="grid gap-2 border-b border-hairline p-4 last:border-b-0 md:grid-cols-[180px_220px_1fr]"
               key={`${row.runId}-${row.action}-${index}`}
             >
               <p className="font-mono text-sm text-primary">{agentLabel(row.actor)}</p>
@@ -60,37 +70,30 @@ export default function HistoryPage() {
           ))}
         </div>
 
+        {/* 페이지네이션 */}
         <div className="mt-4 flex items-center justify-between text-sm text-muted">
           <span>
-            {auditRows.length}개 중 {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, auditRows.length)} 표시
+            전체 {auditRows.length}건 중 {start}–{end} 표시
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
             >
+              <ChevronLeft className="h-4 w-4" />
               이전
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`min-w-[32px] rounded-md px-2 py-1.5 ${
-                  p === page
-                    ? "bg-primary text-canvas font-medium"
-                    : "hover:bg-surface-card"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+            <span className="text-sm font-medium text-ink">
+              {page} / {totalPages}
+            </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-surface-card disabled:opacity-30 disabled:cursor-not-allowed"
             >
               다음
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
