@@ -434,6 +434,33 @@ curl.exe -I http://localhost:3000
 - `MockAssistantPlanner`의 이메일 정규식이 한글 문자를 포함해 Gmail SMTP 오류를 유발하던 문제를 ASCII 전용 정규식으로 수정했습니다.
 - `NotifierAgent`에 `buildEmailBody` 메서드를 추가해 보고서 산출물 내용을 이메일 본문에 포함합니다.
 
+## 2026-05-16 수정 내역
+
+### 승인 흐름 버그 수정 (low-inventory)
+
+- `AssistantService.toWorkflowPlan()`에서 `approvalRequired`를 하드코딩 `false`로 넘기던 버그를 수정했습니다. 이 코드는 "승인하고 실행" 버튼 클릭을 오케스트레이터의 Human-in-the-Loop 승인과 혼동해 생긴 문제였습니다. 올바른 동작은 `plan.requiresApproval()`을 그대로 전달해 오케스트레이터가 `ApprovalRequest`를 생성하게 하는 것입니다.
+- `"approval"` 의사 액션은 실행 Step이 아니므로 `WorkflowStep` 변환 시 제외하도록 필터를 추가했습니다.
+- MockAssistantPlanner 기반 테스트 두 건의 기대값을 `WAITING_FOR_APPROVAL`로 수정했습니다 (올바른 동작).
+
+### LLM 플래너(Groq) 및 승인 흐름 README 현행화
+
+- `## LLM 플래너` 섹션을 추가해 Groq API 환경변수 설정 방법을 문서화했습니다.
+- `## 승인 흐름` 섹션을 추가해 채팅 레벨 확인과 Approval Inbox Human-in-the-Loop 승인의 두 단계를 도식으로 설명했습니다.
+- 환경변수 목록을 Groq/SMTP 구분 테이블 형식으로 정리했습니다.
+
+### 프론트엔드 UX 수정
+
+- 워크플로 실행 결과가 `WAITING_FOR_APPROVAL` 상태일 때 `ResultCard`("실행 결과")가 표시되지 않도록 수정했습니다. 승인 대기 중에는 채팅 메시지만 표시하고 ResultCard는 실제 완료 후에만 나타납니다.
+- `executePlan()` 경로와 `applyAssistantResponse()` 경로 두 곳 모두 수정했습니다.
+
+### 포트폴리오 HTML 현행화
+
+- 스크린샷 4장을 현행 UI 기준으로 교체했습니다 (Command Center, Approvals, Workflows, Reports).
+- Reports 페이지 스크린샷에 우측 상세 패널(KPI 카드, 파이·바 차트)이 포함되도록 업데이트했습니다.
+- 승인함 스크린샷에 low-inventory 승인 대기 카드와 반려/승인 버튼이 보이도록 업데이트했습니다.
+- 커버 스탯에서 "개발 기간 2주" 항목을 제거했습니다.
+- 푸터 스택 나열 항목을 삭제하고 GitHub 링크(`github.com/jm-dev00t/iwap`)로 교체했습니다.
+
 ## 작업 현황
 
 | 작업 | 상태 | 완료일 |
@@ -454,3 +481,4 @@ curl.exe -I http://localhost:3000
 | slots 이메일 수신자 실행까지 전달 | ✅ 완료 | 2026-05-16 |
 | low-inventory 승인 우회 버그 수정 (LLM·Mock 공통) | ✅ 완료 | 2026-05-16 |
 | README LLM 플래너(Groq) + 승인 흐름 현행화 | ✅ 완료 | 2026-05-16 |
+| 승인 대기 시 ResultCard 미표시 (프론트 UX 수정) | ✅ 완료 | 2026-05-16 |
