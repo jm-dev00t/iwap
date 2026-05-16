@@ -1,14 +1,36 @@
 # IWAP: 지능형 업무 자동화 플랫폼
 
-IWAP(Intelligent Workflow Automation Platform)는 자연어 업무 요청을 다중 에이전트 워크플로로 변환하는 B2B AI 자동화 플랫폼 데모입니다. 보고서 생성, 고객 관리 기록, 알림 발송, 승인 요청, 감사 로그까지 하나의 흐름으로 보여주는 포트폴리오/제안용 프로젝트입니다.
+**Intelligent Workflow Automation Platform** — 자연어 업무 요청을 다중 에이전트 워크플로로 변환하는 B2B AI 자동화 플랫폼 데모.
 
-> 이력서 요약: Spring Boot, Spring AI, Next.js, PostgreSQL, PGVector, WebSocket 진행 스트리밍, Tool Calling, Human-in-the-loop 승인, 감사 로그를 포함한 하이브리드 SaaS/SI형 AI 자동화 플랫폼을 구축했습니다.
+보고서 생성, 고객 관리 기록, 알림 발송, Human-in-the-Loop 승인, 감사 로그까지 하나의 흐름으로 보여주는 포트폴리오 프로젝트입니다.
+
+> **이력서 한 줄 요약:** Spring Boot · Spring AI · Next.js · PostgreSQL · PGVector · WebSocket · Tool Calling · Human-in-the-Loop 승인을 포함한 하이브리드 SaaS/SI형 AI 자동화 플랫폼
+
+---
+
+## 포트폴리오 자료
+
+| 자료 | 경로 | 설명 |
+|------|------|------|
+| PDF 소개서 | [`output/pdf/iwap-portfolio.pdf`](output/pdf/iwap-portfolio.pdf) | 프로젝트 개요, 화면, 아키텍처 요약 |
+| 데모 영상 | [`docs/assets/demo/iwap-demo.mp4`](docs/assets/demo/iwap-demo.mp4) | 실제 앱 실행 화면 녹화 (37초) |
+| 스크린샷 | [`docs/assets/portfolio/`](docs/assets/portfolio/) | 주요 화면 4장 |
+
+### 주요 화면
+
+| 명령 센터 | 승인함 |
+|-----------|--------|
+| ![Command Center](docs/assets/portfolio/portfolio-command-chat.png) | ![Approvals](docs/assets/portfolio/portfolio-approvals.png) |
+
+| 워크플로 이력 | 보고서 |
+|--------------|--------|
+| ![Workflows](docs/assets/portfolio/portfolio-workflows.png) | ![Reports](docs/assets/portfolio/portfolio-reports-preview.png) |
 
 ## 데모 영상
 
 [![IWAP 데모 영상](docs/assets/demo/iwap-demo-thumb.png)](docs/assets/demo/iwap-demo.mp4)
 
-- 53초 실제 로컬 앱 녹화: 자연어 명령 실행, 승인 필요 시나리오, 승인함 처리, 실행 이력과 보고서 화면을 보여줍니다.
+- 37초 실제 로컬 앱 녹화: 자연어 명령 입력 → AI 플랜 생성 → 실행 확인 → 승인함 처리 → 보고서 확인
 - MP4 파일: [docs/assets/demo/iwap-demo.mp4](docs/assets/demo/iwap-demo.mp4)
 
 ## 왜 필요한가
@@ -40,30 +62,53 @@ flowchart LR
 
 ```text
 backend/
-  domain/            워크플로, 에이전트, 툴, 승인, 감사, 메모리 도메인 모델
-  application/       워크플로 유스케이스와 오케스트레이션 정책
-  infrastructure/    영속성, AI provider, 커넥터, WebSocket, 보안
-  interfaces/        REST API, WebSocket, DTO
+  domain/            워크플로, 에이전트, 툴, 승인, 감사, 메모리 — 순수 비즈니스 모델 (외부 의존 없음)
+  application/       워크플로 유스케이스, 5-Agent 파이프라인, LLM 플래너 인터페이스
+  infrastructure/    JPA, Spring AI, WebSocket, SMTP/Slack 어댑터, JWT 보안
+  interfaces/        REST Controller, DTO, Swagger 문서
 
 frontend/
-  app/               Next.js App Router
-  components/        Command Center, Timeline, Dashboard UI
-  lib/               데모 계약과 샘플 데이터
+  app/               Next.js App Router (명령 센터, 워크플로, 승인함, 보고서, 감사 로그)
+  components/        CommandCenter, TopBar, WorkflowTimeline 등 공통 컴포넌트
+  lib/               API 클라이언트, 인증, 데이터 타입
 ```
+
+### 5-Agent 파이프라인
+
+```
+자연어 명령 → [Planner Agent] → [Executor Agent] → [Validator Agent] → [Reporter Agent] → [Notifier Agent]
+                  LLM 해석          Tool Calling       결과 검증           보고서 생성          외부 발송
+```
+
+외부 발송이 포함된 경우 Executor 실행 전 Human-in-the-Loop 승인 단계가 삽입됩니다.
+
+### 핵심 코드 진입점
+
+| 흐름 | 파일 |
+|------|------|
+| 채팅 API | `interfaces/.../AssistantController` → `application/assistant/AssistantService` |
+| LLM 플래너 | `application/assistant/OpenAiAssistantPlanner` (Groq), `MockAssistantPlanner` |
+| 워크플로 오케스트레이션 | `application/workflow/WorkflowOrchestrator` |
+| 외부 발송 | `application/delivery/DeliveryService` → `infrastructure/tools/` |
+| 승인 처리 | `interfaces/.../ApprovalController` → `application/workflow/ApprovalService` |
 
 ## 기술 스택
 
-- Spring Boot 3.4.x, Java 21, Spring AI
-- PostgreSQL 16, PGVector, Flyway
-- REST API, Swagger/OpenAPI, WebSocket/STOMP
-- Next.js 16, TypeScript, Tailwind CSS, TanStack Query
-- Docker Compose
+| 분류 | 기술 |
+|------|------|
+| 백엔드 | Spring Boot 3.4, Java 21, Spring AI, Spring Security |
+| 데이터 | PostgreSQL 16, PGVector, Flyway, Spring Data JPA |
+| AI | Groq API (llama-3.3-70b) / OpenAI 호환, Tool Calling |
+| 실시간 | WebSocket/STOMP, TanStack Query |
+| 프론트엔드 | Next.js 15, TypeScript, Tailwind CSS, TanStack Query |
+| 인프라 | Docker Compose, JWT 인증, Swagger/OpenAPI |
+| 외부 연동 | Gmail SMTP, Slack Webhook |
 
 ## 디자인 방향
 
 IWAP은 따뜻한 엔터프라이즈 콘솔 스타일을 지향합니다. 크림색 캔버스, 절제된 코랄 액션 컬러, 어두운 실행 로그 패널을 사용해 일반 SaaS 대시보드보다 더 시연 친화적이고 설명하기 쉬운 톤을 만듭니다.
 
-자세한 UI 기준은 [docs/design-system.md](</D:/work/iwap/docs/design-system.md>)에 정리되어 있습니다.
+자세한 UI 기준은 [docs/design-system.md](docs/design-system.md)에 정리되어 있습니다.
 
 ## 데모 시나리오
 
@@ -72,7 +117,7 @@ IWAP은 따뜻한 엔터프라이즈 콘솔 스타일을 지향합니다. 크림
 3. “재고 부족 제품 리스트 뽑아서 구매팀 카카오톡으로 보내”
 4. “주간 영업 실적 분석해서 PDF 리포트 생성 후 공유”
 
-상세 시나리오는 [docs/demo-scenarios.md](</D:/work/iwap/docs/demo-scenarios.md>)에 있습니다.
+상세 시나리오는 [docs/demo-scenarios.md](docs/demo-scenarios.md)에 있습니다.
 
 ## LLM 플래너
 
@@ -238,7 +283,7 @@ Get-Content -Encoding UTF8 backend/src/main/resources/db/seed/demo-test-data.sql
 - `audit_logs`: 11건
 - `workflow_memories`: 4건
 
-자세한 테스트 절차는 [docs/test-scenarios.md](</D:/work/iwap/docs/test-scenarios.md>)에 있습니다.
+자세한 테스트 절차는 [docs/test-scenarios.md](docs/test-scenarios.md)에 있습니다.
 
 ## API 예시
 
@@ -362,15 +407,18 @@ IWAP은 adapter 기반으로 확장할 수 있게 설계되어 있습니다.
 
 ## 문서
 
-- [docs/architecture.md](</D:/work/iwap/docs/architecture.md>)
-- [docs/api-contract.md](</D:/work/iwap/docs/api-contract.md>)
-- [docs/database-erd.md](</D:/work/iwap/docs/database-erd.md>)
-- [docs/demo-scenarios.md](</D:/work/iwap/docs/demo-scenarios.md>)
-- [docs/test-scenarios.md](</D:/work/iwap/docs/test-scenarios.md>)
-- [docs/business-impact.md](</D:/work/iwap/docs/business-impact.md>)
-- [docs/technical-decisions.md](</D:/work/iwap/docs/technical-decisions.md>)
-- [docs/security-and-operations.md](</D:/work/iwap/docs/security-and-operations.md>)
-- [docs/design-system.md](</D:/work/iwap/docs/design-system.md>)
+| 문서 | 설명 |
+|------|------|
+| [docs/architecture.md](docs/architecture.md) | 전체 아키텍처 및 계층 설명 |
+| [docs/api-contract.md](docs/api-contract.md) | REST API 엔드포인트 목록 |
+| [docs/database-erd.md](docs/database-erd.md) | DB 스키마 및 ERD |
+| [docs/demo-scenarios.md](docs/demo-scenarios.md) | 시나리오별 데모 흐름 |
+| [docs/test-scenarios.md](docs/test-scenarios.md) | 테스트 절차 |
+| [docs/business-impact.md](docs/business-impact.md) | 비즈니스 임팩트 설명 |
+| [docs/technical-decisions.md](docs/technical-decisions.md) | 기술 선택 결정 기록 |
+| [docs/security-and-operations.md](docs/security-and-operations.md) | 보안 및 운영 가이드 |
+| [docs/design-system.md](docs/design-system.md) | UI 디자인 시스템 |
+| [output/pdf/iwap-portfolio.pdf](output/pdf/iwap-portfolio.pdf) | PDF 포트폴리오 소개서 |
 
 ## 2026-05-14 수정 내역
 
