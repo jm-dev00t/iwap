@@ -165,7 +165,7 @@ export function CommandCenter() {
     setSessionId(response.sessionId);
     addMessage("assistant", response.assistantMessage);
     setPlan(response.plan);
-    if (response.run) {
+    if (response.run && response.run.status !== "WAITING_FOR_APPROVAL") {
       setRun(response.run);
     }
   }
@@ -204,13 +204,13 @@ export function CommandCenter() {
 
     try {
       const nextRun = await executeAssistantPlan(plan.id, true);
-      setRun(nextRun);
       setPlan(null);
-      const statusMsg =
-        nextRun.status === "WAITING_FOR_APPROVAL"
-          ? `${workflowTitleLabel(nextRun.title)} 실행을 시작했습니다. 외부 발송 단계는 승인이 필요합니다. 승인함에서 처리해 주세요.`
-          : `${workflowTitleLabel(nextRun.title)} 실행을 완료했습니다. 발송 상태는 아래에서 확인할 수 있습니다.`;
-      addMessage("assistant", statusMsg);
+      if (nextRun.status === "WAITING_FOR_APPROVAL") {
+        addMessage("assistant", `${workflowTitleLabel(nextRun.title)} 실행을 요청했습니다. 외부 발송 전 승인이 필요하므로 승인함에서 처리해 주세요.`);
+      } else {
+        setRun(nextRun);
+        addMessage("assistant", `${workflowTitleLabel(nextRun.title)} 실행을 완료했습니다. 발송 상태는 아래에서 확인할 수 있습니다.`);
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "실행에 실패했습니다.");
       addMessage("assistant", "실행 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.");
