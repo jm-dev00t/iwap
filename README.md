@@ -1,4 +1,4 @@
-# IWAP: 지능형 업무 자동화 플랫폼
+﻿# IWAP: 지능형 업무 자동화 플랫폼
 
 **Intelligent Workflow Automation Platform** — 자연어 업무 요청을 다중 에이전트 워크플로로 변환하는 B2B AI 자동화 플랫폼 데모.
 
@@ -12,26 +12,26 @@
 
 | 자료 | 경로 | 설명 |
 |------|------|------|
-| PDF 소개서 | [`output/pdf/iwap-portfolio.pdf`](output/pdf/iwap-portfolio.pdf) | 프로젝트 개요, 화면, 아키텍처 요약 |
-| 데모 영상 | [`docs/assets/demo/iwap-demo.mp4`](docs/assets/demo/iwap-demo.mp4) | 실제 앱 실행 화면 녹화 (37초) |
-| 스크린샷 | [`docs/assets/portfolio/`](docs/assets/portfolio/) | 주요 화면 4장 |
+| PDF 소개서 | [`output/pdf/iwap-portfolio.pdf`](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/output/pdf/iwap-portfolio.pdf) | 프로젝트 개요, 화면, 아키텍처 요약 |
+| 데모 영상 | [`docs/assets/demo/iwap-demo.mp4`](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4) | 실제 앱 실행 화면 녹화 (37초) |
+| 스크린샷 | [`docs/assets/portfolio/`](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/portfolio/) | 주요 화면 4장 |
 
 ### 주요 화면
 
 | 명령 센터 | 승인함 |
 |-----------|--------|
-| ![Command Center](docs/assets/portfolio/portfolio-command-chat.png) | ![Approvals](docs/assets/portfolio/portfolio-approvals.png) |
+| ![Command Center](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/portfolio/portfolio-command-chat.png) | ![Approvals](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/portfolio/portfolio-approvals.png) |
 
 | 워크플로 이력 | 보고서 |
 |--------------|--------|
-| ![Workflows](docs/assets/portfolio/portfolio-workflows.png) | ![Reports](docs/assets/portfolio/portfolio-reports-preview.png) |
+| ![Workflows](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/portfolio/portfolio-workflows.png) | ![Reports](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/portfolio/portfolio-reports-preview.png) |
 
 ## 데모 영상
 
-[![IWAP 데모 영상](docs/assets/demo/iwap-demo-thumb.png)](docs/assets/demo/iwap-demo.mp4)
+[![IWAP 데모 영상](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/demo/iwap-demo-thumb.png)](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4)
 
 - 37초 실제 로컬 앱 녹화: 자연어 명령 입력 → AI 플랜 생성 → 실행 확인 → 승인함 처리 → 보고서 확인
-- MP4 파일: [docs/assets/demo/iwap-demo.mp4](docs/assets/demo/iwap-demo.mp4)
+- MP4 파일: [docs/assets/demo/iwap-demo.mp4](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4)
 
 ## 왜 필요한가
 
@@ -108,7 +108,7 @@ frontend/
 
 IWAP은 따뜻한 엔터프라이즈 콘솔 스타일을 지향합니다. 크림색 캔버스, 절제된 코랄 액션 컬러, 어두운 실행 로그 패널을 사용해 일반 SaaS 대시보드보다 더 시연 친화적이고 설명하기 쉬운 톤을 만듭니다.
 
-자세한 UI 기준은 [docs/design-system.md](docs/design-system.md)에 정리되어 있습니다.
+자세한 UI 기준은 [docs/design-system.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/design-system.md)에 정리되어 있습니다.
 
 ## 데모 시나리오
 
@@ -117,7 +117,7 @@ IWAP은 따뜻한 엔터프라이즈 콘솔 스타일을 지향합니다. 크림
 3. “재고 부족 제품 리스트 뽑아서 구매팀 카카오톡으로 보내”
 4. “주간 영업 실적 분석해서 PDF 리포트 생성 후 공유”
 
-상세 시나리오는 [docs/demo-scenarios.md](docs/demo-scenarios.md)에 있습니다.
+상세 시나리오는 [docs/demo-scenarios.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/demo-scenarios.md)에 있습니다.
 
 ## LLM 플래너
 
@@ -283,7 +283,7 @@ Get-Content -Encoding UTF8 backend/src/main/resources/db/seed/demo-test-data.sql
 - `audit_logs`: 11건
 - `workflow_memories`: 4건
 
-자세한 테스트 절차는 [docs/test-scenarios.md](docs/test-scenarios.md)에 있습니다.
+자세한 테스트 절차는 [docs/test-scenarios.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/test-scenarios.md)에 있습니다.
 
 ## API 예시
 
@@ -409,16 +409,16 @@ IWAP은 adapter 기반으로 확장할 수 있게 설계되어 있습니다.
 
 | 문서 | 설명 |
 |------|------|
-| [docs/architecture.md](docs/architecture.md) | 전체 아키텍처 및 계층 설명 |
-| [docs/api-contract.md](docs/api-contract.md) | REST API 엔드포인트 목록 |
-| [docs/database-erd.md](docs/database-erd.md) | DB 스키마 및 ERD |
-| [docs/demo-scenarios.md](docs/demo-scenarios.md) | 시나리오별 데모 흐름 |
-| [docs/test-scenarios.md](docs/test-scenarios.md) | 테스트 절차 |
-| [docs/business-impact.md](docs/business-impact.md) | 비즈니스 임팩트 설명 |
-| [docs/technical-decisions.md](docs/technical-decisions.md) | 기술 선택 결정 기록 |
-| [docs/security-and-operations.md](docs/security-and-operations.md) | 보안 및 운영 가이드 |
-| [docs/design-system.md](docs/design-system.md) | UI 디자인 시스템 |
-| [output/pdf/iwap-portfolio.pdf](output/pdf/iwap-portfolio.pdf) | PDF 포트폴리오 소개서 |
+| [docs/architecture.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/architecture.md) | 전체 아키텍처 및 계층 설명 |
+| [docs/api-contract.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/api-contract.md) | REST API 엔드포인트 목록 |
+| [docs/database-erd.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/database-erd.md) | DB 스키마 및 ERD |
+| [docs/demo-scenarios.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/demo-scenarios.md) | 시나리오별 데모 흐름 |
+| [docs/test-scenarios.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/test-scenarios.md) | 테스트 절차 |
+| [docs/business-impact.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/business-impact.md) | 비즈니스 임팩트 설명 |
+| [docs/technical-decisions.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/technical-decisions.md) | 기술 선택 결정 기록 |
+| [docs/security-and-operations.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/security-and-operations.md) | 보안 및 운영 가이드 |
+| [docs/design-system.md](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/design-system.md) | UI 디자인 시스템 |
+| [output/pdf/iwap-portfolio.pdf](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/output/pdf/iwap-portfolio.pdf) | PDF 포트폴리오 소개서 |
 
 ## 2026-05-14 수정 내역
 
