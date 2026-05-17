@@ -13,7 +13,7 @@
 | 자료 | 경로 | 설명 |
 |------|------|------|
 | PDF 소개서 | [`output/pdf/iwap-portfolio.pdf`](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/output/pdf/iwap-portfolio.pdf) | 프로젝트 개요, 화면, 아키텍처 요약 |
-| 데모 영상 | [`docs/assets/demo/iwap-demo.mp4`](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4) | 실제 앱 실행 화면 녹화 (37초) |
+| 데모 영상 | [▶ 재생 / 다운로드](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4) | 실제 앱 실행 화면 녹화 (37초) |
 | 스크린샷 | [`docs/assets/portfolio/`](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/portfolio/) | 주요 화면 4장 |
 
 ### 주요 화면
@@ -28,10 +28,10 @@
 
 ## 데모 영상
 
-[![IWAP 데모 영상](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/demo/iwap-demo-thumb.png)](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4)
+[![IWAP 데모 영상](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/demo/iwap-demo-thumb.png)](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4)
 
 - 37초 실제 로컬 앱 녹화: 자연어 명령 입력 → AI 플랜 생성 → 실행 확인 → 승인함 처리 → 보고서 확인
-- MP4 파일: [docs/assets/demo/iwap-demo.mp4](https://github.com/jm-dev00t/iwap/blob/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4)
+- MP4 다운로드: [iwap-demo.mp4](https://raw.githubusercontent.com/jm-dev00t/iwap/codex/iwap-platform/docs/assets/demo/iwap-demo.mp4)
 
 ## 왜 필요한가
 
